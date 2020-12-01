@@ -1,0 +1,36 @@
+Nov 18,2020
+
+Implemented cohesion_matrix calculator.
+Realized that the matrix form might be wrong; it is the transpose! Matrix form of the model needs revision once more :)
+
+
+
+Nov 20,2020
+
+I have found that kf doesn't really have an effect in my community  level facilitation
+Also, I have found that there is a correlation between more competition and more facilitation. 
+I think I need to control harder the facilitation of the community.
+
+Nov 21,2020
+
+I also find that there is a lower boundary for every C0 there is a lowest F0 that can be attained. Try to get that analyitically.
+
+
+Nov 23,2020
+
+For kc = 0, I see a very strong correlation between C0 and F0, like an exponential curve. This correlation breaks down if the number of metabolic preferences of each strain is fixed. When I plot communities in the C0-F0 diagram for varius values of the rate parameter, I find that the correlation is the same, It just follows the line for a longer range. I expect this to be the case for fixed number of metabolic preferences. It seems like the relation C0-F0 inherits the shape of the distribution from which I sample the number of preferences, but the location of this curve is determined by something else. Maybe leakage.
+
+It appears that no matter what the distribution in the number of preferences per strain is (exponential, constant), the map of competition and facilitation always looks the same. The more preferences you have, the less competition and more facilitation you have. I have identified the effect, and now I have to try to explain. 
+
+Basically: Why is it that increasing the number of preferences per strain, yields a constant value of facilitation, and an almost invariant value of competition?
+
+Hopefully explaining that will help me explain why when I increase kc, this curve moves diagonally upwards
+
+Nov 25,2020
+
+Today I have learned that C0 and F0 are correlated because they both depend on how many metabolites are shared by a pair of species, that is, the product c_{aj}c_{bj}. Since more competitive environment favours more coincidences (more c_{aj}c_{bj} different from 0), then the facilitation will  also increase. I need to be very smart with the D's then, since the only way to decouple facilitation from competition is to choose D_{jk} small, for the shared metabolites. Honestly, it is impossible to do that with only one D, because you will have shared metablolites for all elements of D. Your only chance is to reduce D_{jk} as much as possible for those metabolites that are shared with high frequency. 
+I need to think about this a bit more. Will do it tomorrow.
+
+Nov 30,2020
+
+I have fitted the data {kc, C0} to an exponential of x^2, and was very succesful. However, I can't find an inversion of that in the real plane for the interval {0, 1}. When I do, I get sqrt of negative numbers, due to the logarithm being there, and numbers being smaller than 1... I don't know how to do it to be honest, so I am going to proceed as is.
