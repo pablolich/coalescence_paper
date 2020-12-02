@@ -23,8 +23,8 @@ def main(argv):
     '''Main function'''
 
     #Environment with 50 strains and 50 metabolites
-    s = 10
-    m = 15 
+    s = 50
+    m = 50
     #Create a dictionary of parameters
     params = {
               'g':np.ones(s).reshape(s,1),
@@ -44,7 +44,7 @@ def main(argv):
     kc = np.linspace(0, 0.9999,  10)
     kf = np.linspace(0, 1, num = 10)
     l = np.linspace(0.1, 0.9, num = 5)
-    nsim = range(100)
+    nsim = range(20)
     #Create N-D parameter grid 
     product = itertools.product(beta, kc, kf, l, nsim)
     #Create column names of data frame
@@ -59,16 +59,24 @@ def main(argv):
     df['C'] = np.zeros(ncol)
     df['F'] = np.zeros(ncol)
     #Preallocate column for richness
-    df['r'] = np.zeros(ncol)
+    df['r'] = np.zeros(ncol, dtype = int)
+    #Preallocate columns for preference and metabolic matrices
+    all_c = pd.DataFrame(data = np.zeros(shape = (s*ncol, m), dtype = int))
+    all_D = pd.DataFrame(data = np.zeros(shape = (m*ncol, m)))
+    all_abundances = pd.DataFrame(data = np.zeros(shape = (ncol, s)))
     #Run simulations across the parameter grid
     for i in progressbar.progressbar(range(ncol)):
         #Draw preference matrix and metabolic matrix
         c = preference_matrix(m, s, df['kc'][i],
                               beta = df['beta'][i], n_r = None)
+        #Store in data frame
+        all_c[s*i:s*(i+1)] = c
         #Calculate demands as the sum of the rows of c
         demands = np.sum(c, axis = 0)
         #Sample metabolic matrix
         D = crossfeeding_matrix(demands, m, df['kf'][i])
+        #Store in dataframe
+        all_D[m*i:m*(i+1)]= D
         #Compute costs
         maint_vec = maintenance(c) 
         #Calculate competition and facilitation matrices of the community 
@@ -79,8 +87,8 @@ def main(argv):
                                interaction = 'facilitation')
         #Average non-zero elements to get community level facilitation and 
         #competition
-        df['C0'].iloc[i] = np.mean(C[np.triu_indices(len(C))])
-        df['F0'].iloc[i] = np.mean(F[np.triu_indices(len(F))])
+        df.loc[i, 'C0'] = np.mean(C[np.triu_indices(len(C))])
+        df.loc[i, 'F0'] = np.mean(F[np.triu_indices(len(F))])
         #Calculate cost of each species
         maint_vec = maintenance(c)
         #Add sampled strategies, metabolic, costs, and leakage
@@ -95,10 +103,12 @@ def main(argv):
                         method = 'BDF', atol = 0.0001 )
         #Get abundance of species at stable state
         stable_abundance = sol.y[0:s,-1]
+        #Store in dataframe
+        all_abundances.iloc[i] = stable_abundance
         #Get indices of extant species
         ind_extant = np.where(stable_abundance > 1)[0]
         #Store community richness
-        df['r'].iloc[i] = len(ind_extant)
+        df.loc[i, 'r'] = len(ind_extant)
         #Get rid of these rows  in the matrix of preferences
         c_assembly = c[ind_extant,:]
         #Recalculate competition and facilitation community-level indices
@@ -108,12 +118,14 @@ def main(argv):
                                interaction = 'facilitation')
         #Average non-zero elements to get community level facilitation and 
         #competition
-        df['C'].iloc[i] = np.mean(C[np.triu_indices(len(C))])
-        df['F'].iloc[i] = np.mean(F[np.triu_indices(len(F))])
+        df.loc[i, 'C'] = np.mean(C[np.triu_indices(len(C))])
+        df.loc[i, 'F'] = np.mean(F[np.triu_indices(len(F))])
 
-        
     #Save results
     df.to_csv('../data/simulation_results.csv', index = False)
+    all_c.to_csv('../data/c_matrices.csv', index = False)
+    all_D.to_csv('../data/D_matrices.csv', index = False)
+    all_abundances.to_csv('../data/abundances.csv', index = False)
     return 0
 
 ## CODE ##

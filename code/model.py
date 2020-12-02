@@ -140,19 +140,23 @@ def equations(t, z, params):
     #Separate species and resource vector and reshape them to columns vectors
     N = np.array(z[0:s]).reshape(s,1)
     R = np.array(z[s:m+s]).reshape(m,1)
-    #Compute one iteration step
-    dNdt = g * N * (c @ ((1 - l) * R) - x)
     if coal == 0:
+        #Compute one iteration step
+        dNdt = g * N * (c @ ((1 - l) * R) - x)
         #Normal equation for resources
         dRdt = K - 1 / t * R - (c.transpose() @ N) * R + \
                D.transpose() @ ((l * R) * c.transpose()) @ N
     else:
+        import ipdb; ipdb.set_trace(context = 20)
+        #Extend the vector of resources
+        Re = np.vstack( [R, R] )
+        #Compute one iteration step
+        dNdt = g * N * (c @ ((1 - l) * Re) - x)
         #Construct matrix to sum the effects on resource due to each community
         sum_mat = np.concatenate([np.identity(m), np.identity(m)], axis = 1)
         #Sum the effect of the two communities in the last term
-        import ipdb; ipdb.set_trace(context = 20)
-        dRdt = K - 1 / t * R - (c.transpose() @ N) * R + \
-               sum_mat @ (D.transpose() @ ((l * R) * c.transpose()) @ N)
+        dRdt = K - 1 / t * R - sum_mat @ ((c.transpose() @ N) * Re + \
+               D.transpose() @ ((l * Re) * c.transpose()) @ N)
 
     return(list(dNdt.reshape(s))+list(dRdt.reshape(m)))
     

@@ -60,17 +60,19 @@ def interaction_matrix(l, c, D, interaction = 'both'):
     interaction_matrix[ind] = interaction_vec
     return interaction_matrix
 
-def joint_system(c_1, D_1, N_1, c_2, D_2, N_2, R, l):
-    '''Perform coalescence event between communities 1 and 2'''
+def joint_system(c_1, D_1, N_1, c_2, D_2, N_2, l1, l2, x1, x2):
+    '''Create vectors and matrix of the joint system'''
 
     #Create off-diagonal zeros of joint system
     O = np.zeros( shape = (m, m), dtype = int )
-    #Create matrices of the joint system
+    #Create matrices and vectors of the joint system
     D = np.asarray( np.bmat([[D_1, O], [O, D_2]]) )
     C = np.asarray( np.bmat([[c_1, O], [O, c_2]]) )
     N = np.vstack( [N_1, N_2] )
+    l = np.vstack( [l1, l2] ) 
+    x = np.vstack( [x1, x2] )
     #Create dictionary to return system
-    di = {'D':D, 'C':C, 'N':N}
+    di = {'D':D, 'C':C, 'N':N, 'l':l, 'x':x}
     return(di)
 
 def competition_test(l, k1, k2):
