@@ -64,6 +64,9 @@ def main(argv):
     all_c = pd.DataFrame(data = np.zeros(shape = (s*ncol, m), dtype = int))
     all_D = pd.DataFrame(data = np.zeros(shape = (m*ncol, m)))
     all_abundances = pd.DataFrame(data = np.zeros(shape = (ncol, s)))
+    #Set indices to number each community
+    all_c = all_c.set_index(np.repeat(np.arange(ncol), s))
+    all_D = all_D.set_index(np.repeat(np.arange(ncol), m))
     #Run simulations across the parameter grid
     for i in progressbar.progressbar(range(ncol)):
         #Draw preference matrix and metabolic matrix
@@ -123,9 +126,9 @@ def main(argv):
 
     #Save results
     df.to_csv('../data/simulation_results.csv', index = False)
-    all_c.to_csv('../data/c_matrices.csv', index = False)
-    all_D.to_csv('../data/D_matrices.csv', index = False)
-    all_abundances.to_csv('../data/abundances.csv', index = False)
+    all_c.to_csv('../data/c_matrices.csv')
+    all_D.to_csv('../data/D_matrices.csv')
+    all_abundances.to_csv('../data/abundances.csv')
     return 0
 
 ## CODE ##

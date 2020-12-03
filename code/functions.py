@@ -60,7 +60,7 @@ def interaction_matrix(l, c, D, interaction = 'both'):
     interaction_matrix[ind] = interaction_vec
     return interaction_matrix
 
-def joint_system(c_1, D_1, N_1, c_2, D_2, N_2, l1, l2, x1, x2):
+def joint_system(c_1, D_1, N_1, l1, x1, c_2, D_2, N_2, l2, x2):
     '''Create vectors and matrix of the joint system'''
 
     #Create off-diagonal zeros of joint system
