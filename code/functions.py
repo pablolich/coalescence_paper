@@ -63,17 +63,23 @@ def interaction_matrix(l, c, D, interaction = 'both'):
 def joint_system(c_1, D_1, N_1, l1, x1, c_2, D_2, N_2, l2, x2):
     '''Create vectors and matrix of the joint system'''
 
+    #Get number of metabolites and species in each community
+    m = len(l1)
+    s1 = len(N_1)
+    s2 = len(N_2)
     #Create off-diagonal zeros of joint system
-    O = np.zeros( shape = (m, m), dtype = int )
+    dO = np.zeros( shape = (m, m), dtype = int )
+    cO1 = np.zeros( shape = (s1, m), dtype = int )
+    cO2 = np.zeros( shape = (s2, m), dtype = int )
     #Create matrices and vectors of the joint system
-    D = np.asarray( np.bmat([[D_1, O], [O, D_2]]) )
-    C = np.asarray( np.bmat([[c_1, O], [O, c_2]]) )
-    N = np.vstack( [N_1, N_2] )
+    D = np.asarray( np.bmat([[D_1, dO], [dO, D_2]]) )
+    C = np.asarray( np.bmat([[c_1, cO1], [cO2, c_2]]) )
+    N = np.hstack( [N_1, N_2] ) #These will be reshaped inside model equations
     l = np.vstack( [l1, l2] ) 
     x = np.vstack( [x1, x2] )
     #Create dictionary to return system
-    di = {'D':D, 'C':C, 'N':N, 'l':l, 'x':x}
-    return(di)
+    system = {'D':D, 'C':C, 'N':N, 'l':l, 'x':x}
+    return(system)
 
 def competition_test(l, k1, k2):
     '''

@@ -34,3 +34,7 @@ I need to think about this a bit more. Will do it tomorrow.
 Nov 30,2020
 
 I have fitted the data {kc, C0} to an exponential of x^2, and was very succesful. However, I can't find an inversion of that in the real plane for the interval {0, 1}. When I do, I get sqrt of negative numbers, due to the logarithm being there, and numbers being smaller than 1... I don't know how to do it to be honest, so I am going to proceed as is.
+
+Dec 04,2020
+
+I need to find a way to identify and correct repeated species!

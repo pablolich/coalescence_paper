@@ -127,6 +127,7 @@ def equations(t, z, params):
                 l (mx1): leakage factor of each resource
                 x (sx1): maintenance cost of each species
                 D (mxm): metabolic matrix of community
+                coal (bool): is the assembly a coalescence event, or not?
 
     Output:
                 list (1x(s+m)): abundance of each species and resource after
@@ -140,14 +141,13 @@ def equations(t, z, params):
     #Separate species and resource vector and reshape them to columns vectors
     N = np.array(z[0:s]).reshape(s,1)
     R = np.array(z[s:m+s]).reshape(m,1)
-    if coal == 0:
+    if not coal :
         #Compute one iteration step
         dNdt = g * N * (c @ ((1 - l) * R) - x)
         #Normal equation for resources
         dRdt = K - 1 / t * R - (c.transpose() @ N) * R + \
                D.transpose() @ ((l * R) * c.transpose()) @ N
-    else:
-        import ipdb; ipdb.set_trace(context = 20)
+    if coal:
         #Extend the vector of resources
         Re = np.vstack( [R, R] )
         #Compute one iteration step

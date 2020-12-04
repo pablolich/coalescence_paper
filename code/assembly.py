@@ -26,8 +26,7 @@ def main(argv):
     s = 50
     m = 50
     #Create a dictionary of parameters
-    params = {
-              'g':np.ones(s).reshape(s,1),
+    params = {'g':np.ones(s).reshape(s,1),
               's':s,
               'm':m,
               'K':20*np.ones(m).reshape(m,1),

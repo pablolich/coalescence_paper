@@ -22,49 +22,53 @@ sim = aggregate(x = simulations,
 # simulations_l_3['kc_kf'] = simulations_l_3$kc + simulations_l_3$kf
 
 #Plot
-p = ggplot(data = sim, aes(x = C0, y = F0))+
-  geom_point(aes(fill = kc + kf,
-                 shape = as.factor(l)), 
-             colour = 'grey',
-             stroke = 0.1)+
+p = ggplot(data = simulations, aes(x = C, y = F, 
+                                   fill = as.factor(l),
+                                   shape = as.factor(l)))+
+  geom_point(colour = 'black',
+             stroke = 0.2)+
+  geom_smooth(data = simulations, 
+              method=lm,  linetype="dashed",
+              se=FALSE, fullrange=TRUE,
+              color = 'black', size = 0.5,
+              show.legend = FALSE,
+              aes(x = C0, y = F0,
+                  group = as.factor(l)))+
+  geom_smooth(aes(x = C, y = F, 
+                  group = as.factor(l)),
+              se=FALSE, fullrange = TRUE, 
+              method = lm,
+              show.legend = FALSE)+
   theme(aspect.ratio = 1)+
-  geom_abline(slope = 0.1/0.9, intercept = 0, 
-              colour = brewer.pal(n = 5, name = "RdYlBu")[1],
-              size = 1)+
-  geom_abline(slope = 0.3/0.7, intercept = 0, 
-              colour = brewer.pal(n = 5, name = "RdYlBu")[2],
-              size = 1)+
-  geom_abline(slope = 1, intercept = 0, 
-              colour = brewer.pal(n = 5, name = "RdYlBu")[3],
-              size = 1)+
-  geom_abline(slope = 0.7/0.3, intercept = 0, 
-              colour = brewer.pal(n = 5, name = "RdYlBu")[4],
-              size = 1)+
-  geom_abline(slope = 0.9/0.1, intercept = 0, 
-              colour = brewer.pal(n = 5, name = "RdYlBu")[5],
-              size = 1)+
+  # geom_abline(slope = 0.1/0.9, intercept = 0, 
+  #             colour = brewer.pal(n = 5, name = "RdYlBu")[1],
+  #             size = 1)+
+  # geom_abline(slope = 0.3/0.7, intercept = 0, 
+  #             colour = brewer.pal(n = 5, name = "RdYlBu")[2],
+  #             size = 1)+
+  # geom_abline(slope = 1, intercept = 0, 
+  #             colour = brewer.pal(n = 5, name = "RdYlBu")[3],
+  #             size = 1)+
+  # geom_abline(slope = 0.7/0.3, intercept = 0, 
+  #             colour = brewer.pal(n = 5, name = "RdYlBu")[4],
+  #             size = 1)+
+  # geom_abline(slope = 0.9/0.1, intercept = 0, 
+  #             colour = brewer.pal(n = 5, name = "RdYlBu")[5],
+  #             size = 1)+
   theme(panel.background = element_blank(),
         panel.grid.major = element_line(colour = 'grey'),
         panel.border  = element_rect(colour = 'black', fill = NA),
         legend.title = element_text(size = 15),
         legend.title.align = 0.5,
         legend.key = element_blank())+
-  annotate("text", x = 1.6, y = 2.5, 
-           label = expression(paste(m[j], '=', frac(l[j], paste('(',1-l[j],')')))),
-           size = 5)+
+  # annotate("text", x = 1.6, y = 2.5, 
+  #          label = expression(paste(m[j], '=', frac(l[j], paste('(',1-l[j],')')))),
+  #          size = 5)+
   labs(x = expression(paste(C[0])),
-       y = expression(paste(F[0])),
-       shape = expression(paste(l[j])),
-       fill = expression(paste(k[c] + k[f])))+
+       y = expression(paste(F[0])))+
   scale_shape_manual(values = c(21, 22, 23, 24, 25))+
-  scale_fill_viridis()
+  #scale_fill_viridis()+ 
+  xlim(0,3)+
+  ylim(0,3)
 #Show
 p
-
-
-##Fit data from sim to an exponentiexal
-
-fit <- nls(sim$C0~I(exp(x*a)), data=sim, start=list(a = 2))
-exponential = function(c0, a, x){
-  return(c0*exp(a*x))
-}

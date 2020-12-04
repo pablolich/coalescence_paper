@@ -1,0 +1,14 @@
+Dec 03,2020
+
+Draw a plot that states the whole proces: sampling ---> assembly ---> coalescence like the ones in alvaro's papers. 
+
+Dec 04,2020
+
+Coalescence matrix where the diagonal is the result from coalescence between communities with the same leakage, and the upper diagonal is between communities with different leakage.
+Actually, the matrix would not be upper diagonal because it wouldn't be simmetric. the element 1-2 would be the invasion of more cohseive communities form leakage value 1, to less cohesive communities from leakage value 2. On the contrary, the element 2-1 would be the invasion of more cohesive communities from leakage value 2 to less cohesive communities from leakage value 1. This would leave the exploration of high high invasions, and low low invasions, which actually make a lot of sense. 
+Therefore, I could have two matrices. The first has elements A_ij, that represent coalescence events in which highly cohesive communities with leakage value i invade lower cohesive communities with leakage value j.The second one has elements B_ij, that represent coalescence events where  randomly sampled communities with leakage value i invade randomly sampled communities with leakage value i
+Optimally, I would only want the second matrix, because the best thing would be that my dynamics show for randomly sampled communities, so in the diagonal I would have the effect within the same leakage, and in the off-diagonals I would have the effect with a different leakage value effect
+
+Idea for a plot: To prove that your k_c and k_f parametrizations make sense, plot a cloud of points with  k_c and k_f = 0, and compare with the plot when they are allowd to travel the parameter space. Overlay to see that one contains the other, and thus, it is a sensible parametrization.
+
+Idea for a plot: track changes in average l in a mixing event when an extinction happen. what happens to l, when members of communities with different leakage factor interact?
