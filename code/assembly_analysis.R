@@ -27,6 +27,18 @@ p = ggplot(data = simulations, aes(x = C, y = F,
                                    shape = as.factor(l)))+
   geom_point(colour = 'black',
              stroke = 0.2)+
+  # annotate("text", x = 1.6, y = 2.5, 
+  #          label = expression(paste(m[j], '=', frac(l[j], paste('(',1-l[j],')')))),
+  #          size = 5)+
+  labs(x = expression(paste(C[0])),
+       y = expression(paste(F[0])))+
+  scale_shape_manual(values = c(21, 22, 23, 24, 25))+
+  geom_point(data = simulations[table(simulations$r) > 500,], 
+             x = simulations[table(simulations$r) > 500,]$C, 
+             y = simulations[table(simulations$r) > 500,]$F, 
+             color  = 'black',
+             shape = 20,
+             size = 0.3)+
   geom_smooth(data = simulations, 
               method=lm,  linetype="dashed",
               se=FALSE, fullrange=TRUE,
@@ -61,14 +73,8 @@ p = ggplot(data = simulations, aes(x = C, y = F,
         legend.title = element_text(size = 15),
         legend.title.align = 0.5,
         legend.key = element_blank())+
-  # annotate("text", x = 1.6, y = 2.5, 
-  #          label = expression(paste(m[j], '=', frac(l[j], paste('(',1-l[j],')')))),
-  #          size = 5)+
-  labs(x = expression(paste(C[0])),
-       y = expression(paste(F[0])))+
-  scale_shape_manual(values = c(21, 22, 23, 24, 25))+
   #scale_fill_viridis()+ 
   xlim(0,3)+
-  ylim(0,3)
+  ylim(0,3) 
 #Show
 p

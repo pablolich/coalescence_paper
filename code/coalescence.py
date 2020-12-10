@@ -10,6 +10,7 @@ import sys
 import pandas as pd
 import numpy as np
 import itertools
+import warnings
 import progressbar
 from model import maintenance, equations
 from functions import joint_system
@@ -24,65 +25,68 @@ from scipy.integrate import solve_ivp
 def main(argv):
     '''Main function'''
     #Load data from assembly simulations
-    assembly_data = pd.read_csv('../data/simulation_results_sh.csv')
-    D_mats = pd.read_csv('../data/D_matrices_sh.csv', index_col = 0)
-    c_mats = pd.read_csv('../data/c_matrices_sh.csv', index_col = 0)
-    abundances = pd.read_csv('../data/abundances_sh.csv', index_col = 0)
+    assembly_data = pd.read_csv('../data/simulation_results.csv')
+    #Count number of communities for every richness value
+    counts_richness = assembly_data['r'].value_counts()
+    #Get richness that have more than 500 counts
+    r_vec = np.array([30])#np.array(counts_richness[counts_richness > 500].index)
+    #Load rest of data from simulations
+    D_mats = pd.read_csv('../data/D_matrices.csv', index_col = 0)
+    c_mats = pd.read_csv('../data/c_matrices.csv', index_col = 0)
+    abundances = pd.read_csv('../data/abundances.csv', index_col = 0)
     #Number of resources
     m = len(D_mats.columns)
     #Get vectors of parameters over which coalescence experiments will be run
-    l_vec = np.unique(np.array(assembly_data['l']))
+    l_vec = np.array([0.5])#np.unique(np.array(assembly_data['l']))
     #Fraction of communities that will be coalesced
-    fraction = 0.05
-    for i in range(len(l_vec)):
+    fraction = 0.1
+    if fraction > 0.5:
+        #Note that the upper bound for fraction is 0.5, because I will be 
+        #taking the 50%  most cohesive and 50% least cohesive (spanning the 
+        #whole space of communities). Any number above 0.5 will generate lists
+        #where the same community is both in the most cohesive and least 
+        #cohesive list
+        warnings.warn('fraction > 0.5, some communities are being coalesced \
+                       with themselves', RuntimeWarning)
+        #Create empty dataframe for storing results
+    results = pd.DataFrame(columns = ['l1', 'l2', 'r1', 'r2', 'O1', 'O2', 'S'])
+    for i in np.array([0]):#range(len(l_vec)):
         #Get data only with those levels of l
         data_i = assembly_data.loc[assembly_data['l'] == l_vec[i]]
         #Get vector of richnesses so I can iterate over it
-        r_vec = np.unique(np.array(data_i['r']))
-        for k in range(len(r_vec)):
+        for k in np.array([0]):#range(len(r_vec)):
             #Print message
-            print('Coalescing simulations for l = ',l_vec[i], \
+            print('Coalescing communities for l = ',l_vec[i], \
                   'and richness = ', int(r_vec[k]))
             #Get data with l and r values
             data_ik = data_i.loc[data_i['r'] == r_vec[k]]
-            #Get rows in data frame have their l and r equal to i 
-            #Get abundances of these communities
+            #Get abundance vectors of these communities
             abundances_i = abundances.iloc[data_ik.index,:]
-            #Get closest integer to the fraction of coalescing communities
-            n_comm = round(len(data_ik)*fraction)
-            #Get cohesion vector
-            cohesion = data_ik['F'] - data_ik['C']
-            #Get community indices of those with top n_comm values of cohesion
-            ind_top = cohesion.index[cohesion.argsort()[-n_comm:][::-1]]
-            #Get community indices of those with lowest n_comm values of cohesion
-            ind_low = cohesion.index[cohesion.argsort()[:n_comm]]
-            #Concatenate these vectors
-            ind_coal = np.hstack([np.array(ind_top), np.array(ind_low)])
-            #Get indices corresponding to these communitie in the D_matrices and
-            #c_matrices data frames
-            D_index_pd = np.where(np.in1d(np.array(D_mats.index), ind_coal))[0]
-            #Note that np.in1d(A, B) returns a boolean array indicating whether 
-            #each value of A is found in B. np.where returns the indices of the 
-            #True values.
-            c_index_pd = np.where(np.in1d(np.array(c_mats.index), ind_coal))[0]    
-            #Mask matrices with this indices
-            D_i = D_mats.iloc[D_index_pd, :]
-            c_i = c_mats.iloc[c_index_pd, :]
-            #Get a vector of all possible pairwise combinations of selected
-            #communities
-            if r_vec[k] == 20:
-                import ipdb; ipdb.set_trace(context = 20)
-            comb = np.array(np.triu_indices(len(data_ik.index), k = 1)).transpose()
+            comb = np.array(np.triu_indices(len(data_ik), k = 1)).transpose()
             n_sim = len(comb)
+            #Preallocate storage dataframe
+            df = pd.DataFrame({'l1':l_vec[i]*np.ones(n_sim),
+                               'l2':l_vec[i]*np.ones(n_sim),
+                               'r1':r_vec[k]*np.ones(n_sim, dtype = int),
+                               'r2':r_vec[k]*np.ones(n_sim, dtype = int),
+                               'O1':np.zeros(n_sim), #Cohesion of community 1
+                               'O2':np.zeros(n_sim), #"                   " 2
+                               'S':np.zeros(n_sim) #Similarity (Cr, C1)
+                               })
             #Perform all possible coalescence experiments between selected
             #communities.
             for j in progressbar.progressbar(range(n_sim)):
                 #Get indices of coalescence communities 1, and 2
                 ind_1 = data_ik.index[comb[j][0]]
                 ind_2 = data_ik.index[comb[j][1]]
+                #Get cohesion levels for each of the coalescing communities
+                df.loc[j,'O1'] = data_ik.loc[ind_1, 'F'] - \
+                                 data_ik.loc[ind_1, 'C']
+                df.loc[j,'O2'] = data_ik.loc[ind_2, 'F'] - \
+                                 data_ik.loc[ind_2, 'C']
                 #Set parameters for community 1 
                 n1 = np.array(abundances_i.loc[ind_1,:])
-                c1 = (c_i.iloc[c_i.index == ind_1, :]).reset_index(drop = True)
+                c1 = c_mats.loc[ind_1].reset_index(drop = True)
                 #Get species abundance and preference vectors of present species 
                 #only
                 present_rows = np.where(n1 > 1)[0]
@@ -92,10 +96,10 @@ def main(argv):
                 #Keep getting parameters...
                 x1 = np.array(maintenance(c1_present)).reshape(s1, 1)
                 l1 = l_vec[i]*np.ones(m).reshape(m, 1)
-                D1 = D_i.iloc[D_i.index == ind_1, :]
+                D1 = D_mats.iloc[D_mats.index == ind_1, :]
                 #Set parameters for community 2
                 n2 = np.array(abundances_i.loc[ind_2,:])
-                c2 = (c_i.iloc[c_i.index == ind_2, :]).reset_index(drop = True)
+                c2 = c_mats.loc[ind_2].reset_index(drop = True)
                 #Get species abundance and preference vectors of present species 
                 #only
                 present_rows = np.where(n2 > 1)[0]
@@ -105,7 +109,7 @@ def main(argv):
                 #Keep getting parameters...
                 x2 = np.array(maintenance(c2_present)).reshape(s2, 1)
                 l2 = l_vec[i]*np.ones(m).reshape(m, 1)
-                D2 = D_i.iloc[D_i.index == ind_2, :]
+                D2 = D_mats.iloc[D_mats.index == ind_2, :]
                 #Create joint system
                 ext_system = joint_system(c1_present, D1, n1_present, l1, x1, 
                                           c2_present, D2, n2_present, l2, x2)
@@ -125,10 +129,29 @@ def main(argv):
                 z0 = list(ext_system['N']) + list(2*np.ones(m)) 
                 #Create time vector
                 tspan = tuple([1, 1e4])
-                #Solve diferential equations
+                #Integrate diferential equations
                 sol = solve_ivp(lambda t,z: equations(t,z, params),
                                 tspan, z0,
                                 method = 'BDF', atol = 0.0001 )
+                #Get steady state abundance results
+                stable_abundance = sol.y[0:params['s'],-1]
+                #Concatenate preference matrices of c1 and c2
+                c_both = np.vstack([c1_present, c2_present])
+                #Get indices of surviving species
+                ind_surv = np.where(stable_abundance > 1)[0]
+                #Get preference matrix of mixed community
+                c_mixed = c_both[ind_surv,:]
+                #Get vector of species presence in the mixed space for C1 
+                spec_1 = np.hstack([n1_present, np.zeros(s2)])
+                #Calculate similarity
+                S = np.dot(spec_1, stable_abundance)/ \
+                    (np.linalg.norm(spec_1)*np.linalg.norm(stable_abundance))
+                #Store similarity
+                df.loc[j,'S'] = S
+            #Add to the total dataframe 
+            results = pd.concat([results, df])
+    #Save dataframe for analysis
+    results.to_csv('../data/coalescence_results.csv', index = False)
     return 0
 
 ## CODE ##

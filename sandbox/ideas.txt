@@ -12,3 +12,9 @@ Optimally, I would only want the second matrix, because the best thing would be 
 Idea for a plot: To prove that your k_c and k_f parametrizations make sense, plot a cloud of points with  k_c and k_f = 0, and compare with the plot when they are allowd to travel the parameter space. Overlay to see that one contains the other, and thus, it is a sensible parametrization.
 
 Idea for a plot: track changes in average l in a mixing event when an extinction happen. what happens to l, when members of communities with different leakage factor interact?
+
+Dec 09,2020
+
+The diagonal of matrix A_ii would be looking at the effect of network cohesion on coalescence (since communities of different levels of cohesion (high, and low) are being coalesced). The non-diagonal elements A_ij would be looking at the mixed effect of having different l's and different cohesion levels.
+The matrix B_ij would be looking at the same thing, but coalescence is performed by drawing communities at random. The effect would be less exagerated, but hopefully would still be there. But then this matrix would be simetric! 
+Okay, lets stick with A_ij, it is better. 
