@@ -11,6 +11,7 @@ import pandas as pd
 import numpy as np
 import itertools
 import warnings
+import random
 import progressbar
 from model import maintenance, equations
 from functions import joint_system
@@ -29,7 +30,7 @@ def main(argv):
     #Count number of communities for every richness value
     counts_richness = assembly_data['r'].value_counts()
     #Get richness that have more than 500 counts
-    r_vec = np.array([30])#np.array(counts_richness[counts_richness > 500].index)
+    r_vec = np.array([20, 30, 37])#np.array(counts_richness[counts_richness > 500].index)
     #Load rest of data from simulations
     D_mats = pd.read_csv('../data/D_matrices.csv', index_col = 0)
     c_mats = pd.read_csv('../data/c_matrices.csv', index_col = 0)
@@ -37,24 +38,14 @@ def main(argv):
     #Number of resources
     m = len(D_mats.columns)
     #Get vectors of parameters over which coalescence experiments will be run
-    l_vec = np.array([0.5])#np.unique(np.array(assembly_data['l']))
+    l_vec = np.unique(assembly_data['l'])#np.unique(np.array(assembly_data['l']))
     #Fraction of communities that will be coalesced
-    fraction = 0.1
-    if fraction > 0.5:
-        #Note that the upper bound for fraction is 0.5, because I will be 
-        #taking the 50%  most cohesive and 50% least cohesive (spanning the 
-        #whole space of communities). Any number above 0.5 will generate lists
-        #where the same community is both in the most cohesive and least 
-        #cohesive list
-        warnings.warn('fraction > 0.5, some communities are being coalesced \
-                       with themselves', RuntimeWarning)
-        #Create empty dataframe for storing results
     results = pd.DataFrame(columns = ['l1', 'l2', 'r1', 'r2', 'O1', 'O2', 'S'])
-    for i in np.array([0]):#range(len(l_vec)):
+    for i in range(len(l_vec)):
         #Get data only with those levels of l
         data_i = assembly_data.loc[assembly_data['l'] == l_vec[i]]
         #Get vector of richnesses so I can iterate over it
-        for k in np.array([0]):#range(len(r_vec)):
+        for k in range(len(r_vec)):
             #Print message
             print('Coalescing communities for l = ',l_vec[i], \
                   'and richness = ', int(r_vec[k]))
@@ -63,6 +54,12 @@ def main(argv):
             #Get abundance vectors of these communities
             abundances_i = abundances.iloc[data_ik.index,:]
             comb = np.array(np.triu_indices(len(data_ik), k = 1)).transpose()
+            #Avoid computational intensity
+            if len(comb) > 5000:
+                #Sample community pairs
+                ind = np.random.randint(0, len(comb), 5000)
+                #Choose thos indices
+                comb = comb[ind]
             n_sim = len(comb)
             #Preallocate storage dataframe
             df = pd.DataFrame({'l1':l_vec[i]*np.ones(n_sim),

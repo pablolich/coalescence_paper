@@ -42,8 +42,8 @@ def main(argv):
     nr = np.linspace(1, 5, 2, dtype = int)
     kc = np.linspace(0, 0.9999,  10)
     kf = np.linspace(0, 1, num = 10)
-    l = np.linspace(0.1, 0.9, num = 5)
-    nsim = range(20)
+    l = np.linspace(0.3, 0.7, num = 3)
+    nsim = range(100)
     #Create N-D parameter grid 
     product = itertools.product(beta, kc, kf, l, nsim)
     #Create column names of data frame
