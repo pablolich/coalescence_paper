@@ -3,8 +3,14 @@ setwd("~/Desktop/coalescence_paper/code")
 require(ggplot2)
 require(RColorBrewer)
 require(viridis)
+#Create a vector of arguments
+args = commandArgs(trailingOnly=TRUE)
 #Load data
-simulations = read.csv('../data/simulation_results.csv')
+if (length(args) >= 1){
+  simulations = read.csv(paste('../data/simulation_results', args[1], '.csv'))
+} else{
+  simulations = read.csv('../data/simulation_results.csv')
+}
 #Sample rows from this huge dataset
 rows = sample(1:nrow(simulations), 1e4)
 simulations = simulations[rows,]
@@ -22,6 +28,11 @@ sim = aggregate(x = simulations,
 # simulations_l_3['kc_kf'] = simulations_l_3$kc + simulations_l_3$kf
 
 #Plot
+if (length(args) >= 1){
+  pdf(paste('../sandbox/F_C_diagram', args[1], '.pdf'))
+} else{
+  pdf('../sandbox/F_C_diagram.pdf')
+}
 p = ggplot(data = simulations, aes(x = C, y = F, 
                                    fill = as.factor(l),
                                    shape = as.factor(l)))+
@@ -76,5 +87,4 @@ p = ggplot(data = simulations, aes(x = C, y = F,
   #scale_fill_viridis()+ 
   xlim(0,3)+
   ylim(0,3) 
-#Show
-p
+dev.off()

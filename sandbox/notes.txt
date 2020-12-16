@@ -38,3 +38,12 @@ I have fitted the data {kc, C0} to an exponential of x^2, and was very succesful
 Dec 04,2020
 
 I need to find a way to identify and correct repeated species!
+
+Dec 15,2020
+
+Hoy he encontrado el efecto opuesto en mi dinamica. Cuanto mas cohesiva es una comunidad, menos sobrevive. Es un resultado muy interesante, pero solo si encuentro porque!. Voy a intentar buscar casos para otros parametros que me den la dinamica que quiero, y luego I work my way up to the wrong dynamics and try to explain why. 
+
+Dec 15,2020
+
+I changed three things: k's are now 0, there is now less metabolites and species, and their numbers are not the same. With this changes, the behaviour gets inverted, which is cool. However, it is also weaker. I am seeing if adding the kc and kf's intensifies the relationship, and keeps the behaviour inverted. The next step will be to keep the difference of metabolites and species high, but increasing the number of species and metabolites.
+The problem with doing this is that: if my dynamics only work when there are more metabolites than species, that is not very realistic, since normally it is actually the opposite; more species than metabolites

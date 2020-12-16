@@ -23,8 +23,8 @@ def main(argv):
     '''Main function'''
 
     #Environment with 50 strains and 50 metabolites
-    s = 50
-    m = 50
+    s = 25
+    m = 75
     #Create a dictionary of parameters
     params = {'g':np.ones(s).reshape(s,1),
               's':s,
@@ -40,10 +40,10 @@ def main(argv):
     #Create parameter vectors
     beta = np.linspace(5, 5,  num = 1, dtype = int)
     nr = np.linspace(1, 5, 2, dtype = int)
-    kc = np.linspace(0, 0.9999,  10)
-    kf = np.linspace(0, 1, num = 10)
-    l = np.linspace(0.3, 0.7, num = 3)
-    nsim = range(100)
+    kc = np.array([0])#np.linspace(0, 0.9999, 10)
+    kf = np.array([0])#]np.linspace(0, 1, 10)
+    l = np.linspace(0.1, 0.9, num = 7)
+    nsim = range(5000)
     #Create N-D parameter grid 
     product = itertools.product(beta, kc, kf, l, nsim)
     #Create column names of data frame
@@ -68,6 +68,8 @@ def main(argv):
     all_D = all_D.set_index(np.repeat(np.arange(ncol), m))
     #Run simulations across the parameter grid
     for i in progressbar.progressbar(range(ncol)):
+        if i == 26999:
+            import ipdb; ipdb.set_trace(context = 20)
         #Draw preference matrix and metabolic matrix
         c = preference_matrix(m, s, df['kc'][i],
                               beta = df['beta'][i], n_r = None)
@@ -113,21 +115,28 @@ def main(argv):
         df.loc[i, 'r'] = len(ind_extant)
         #Get rid of these rows  in the matrix of preferences
         c_assembly = c[ind_extant,:]
-        #Recalculate competition and facilitation community-level indices
-        C = interaction_matrix(df['l'][i], c_assembly, D, 
-                               interaction = 'competition')
+        #Recalculate facilitation and competititon community-level indices
         F = interaction_matrix(df['l'][i], c_assembly, D, 
                                interaction = 'facilitation')
+        C = interaction_matrix(df['l'][i], c_assembly, D, 
+                               interaction = 'competition')
         #Average non-zero elements to get community level facilitation and 
         #competition
         df.loc[i, 'C'] = np.mean(C[np.triu_indices(len(C))])
         df.loc[i, 'F'] = np.mean(F[np.triu_indices(len(F))])
 
     #Save results
-    df.to_csv('../data/simulation_results.csv', index = False)
-    all_c.to_csv('../data/c_matrices.csv')
-    all_D.to_csv('../data/D_matrices.csv')
-    all_abundances.to_csv('../data/abundances.csv')
+    if len(sys.argv) > 1:
+        df.to_csv('../data/simulation_results_'+sys.argv[1]+'.csv',
+                  index = False)
+        all_c.to_csv('../data/c_matrices_'+sys.argv[1]+'.csv')
+        all_D.to_csv('../data/D_matrices_'+sys.argv[1]+'.csv')
+        all_abundances.to_csv('../data/abundances_'+sys.argv[1]+'.csv')
+    else:
+        df.to_csv('../data/simulation_results.csv', index = False)
+        all_c.to_csv('../data/c_matrices.csv')
+        all_D.to_csv('../data/D_matrices.csv')
+        all_abundances.to_csv('../data/abundances.csv')
     return 0
 
 ## CODE ##

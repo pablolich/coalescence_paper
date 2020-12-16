@@ -25,16 +25,33 @@ from scipy.integrate import solve_ivp
 
 def main(argv):
     '''Main function'''
-    #Load data from assembly simulations
-    assembly_data = pd.read_csv('../data/simulation_results.csv')
+    import ipdb; ipdb.set_trace(context = 20)
+    if len(sys.argv) > 1:
+        #Load data from assembly simulations
+        assembly_data = pd.read_csv('../data/simulation_results_'+sys.argv[1]+'.csv')
+        #Load rest of data from simulations
+        D_mats = pd.read_csv('../data/D_matrices_'+sys.argv[1]+'.csv', 
+                             index_col = 0)
+        c_mats = pd.read_csv('../data/c_matrices_'+sys.argv[1]+'.csv', 
+                             index_col = 0)
+        abundances = pd.read_csv('../data/abundances_'+sys.argv[1]+'.csv', 
+                                 index_col = 0)
+    else:
+        #Load data from assembly simulations
+        assembly_data = pd.read_csv('../data/simulation_results.csv')
+        #Load rest of data from simulations
+        D_mats = pd.read_csv('../data/D_matrices.csv', 
+                             index_col = 0)
+        c_mats = pd.read_csv('../data/c_matrices.csv', 
+                             index_col = 0)
+        abundances = pd.read_csv('../data/abundances.csv', 
+                                 index_col = 0)
+
     #Count number of communities for every richness value
     counts_richness = assembly_data['r'].value_counts()
     #Get richness that have more than 500 counts
-    r_vec = np.array([20, 30, 37])#np.array(counts_richness[counts_richness > 500].index)
-    #Load rest of data from simulations
-    D_mats = pd.read_csv('../data/D_matrices.csv', index_col = 0)
-    c_mats = pd.read_csv('../data/c_matrices.csv', index_col = 0)
-    abundances = pd.read_csv('../data/abundances.csv', index_col = 0)
+    #r_vec = np.array([15, 20, 25, 30, 33, 37])#np.array(counts_richness[counts_richness > 500].index)
+    r_vec = np.array([6, 7, 8, 9])
     #Number of resources
     m = len(D_mats.columns)
     #Get vectors of parameters over which coalescence experiments will be run
@@ -148,7 +165,13 @@ def main(argv):
             #Add to the total dataframe 
             results = pd.concat([results, df])
     #Save dataframe for analysis
-    results.to_csv('../data/coalescence_results.csv', index = False)
+    if len(sys.argv) > 1:
+        results.to_csv('../data/coalescence_results_'+sys.argv[1]+'.csv',
+                       index = False)
+    else:
+        results.to_csv('../data/coalescence_results.csv', index = False)
+
+
     return 0
 
 ## CODE ##
