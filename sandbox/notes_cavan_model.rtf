@@ -1,0 +1,16 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2513
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\margl1440\margr1440\vieww10800\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 1. Why summation over j != k? Wouldn\'92t that be violation conservation of matter?\
+2. What is the form of the external input? Is it just a supply? Note that in the absence of consumers the system would explode.\
+3. Again, in the equation for resources, if l_\{jj\} != 0, you are violating the conservation of matter because you are not accounting for that leakage by only summing over j != k. If l_\{jj\} = 0, this is ok, but then it is not necessary to impose j != k in the summation, because that term is 0.\
+4. nu_j\'92s meaning is not given\
+5. l_\{jk\} = 0.4, I don\'92t know if this can be that. l_\{jk\} is a matrix that needs to be row stochastic, but M*0.4 != 1 always!\
+6. In the analytical solution for consumers with the same functional traits, l_j\'92s meaning is not obvious. Is it just sum_k l_\{jk\}? (I haven\'92t done the calculations, so maybe it is obvious once you do them). \
+7. The thermal fitness equations have indices \{ij\}, and \{i\} respectively, at the L.H.S, but no indices in the R.H.S. Does this imply that all species have the same traits? The thermal fitness properties will be taken from tom\'92s data. That solves the subindex i. What about the subindex j? Will all bacteria respond equally to all resources? Okay, so you have binary division between specialists and generalists. Is that enough? Only two types of bacteria in the sense of resource consumption, but then each group has a spectrum of different responses to temperature. I think the binary separation is a bold assumption, so in deed it needs to be well justified, adding 4 is not enough\
+8. Are the equations being integrated by hand? (Steady state section suggests this)\
+9. Why are the final populations all the same?	}

@@ -18,3 +18,9 @@ Dec 09,2020
 The diagonal of matrix A_ii would be looking at the effect of network cohesion on coalescence (since communities of different levels of cohesion (high, and low) are being coalesced). The non-diagonal elements A_ij would be looking at the mixed effect of having different l's and different cohesion levels.
 The matrix B_ij would be looking at the same thing, but coalescence is performed by drawing communities at random. The effect would be less exagerated, but hopefully would still be there. But then this matrix would be simetric! 
 Okay, lets stick with A_ij, it is better. 
+
+Dec 21,2020
+
+Can I obtain an analytical expression for the dependance of C on kc, and on F on kf (and kc, obviously)??? Maybe worth asking Stefano. 
+
+I want to explore the role of (m-s) in my dynamics. 

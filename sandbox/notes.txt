@@ -3,8 +3,6 @@ Nov 18,2020
 Implemented cohesion_matrix calculator.
 Realized that the matrix form might be wrong; it is the transpose! Matrix form of the model needs revision once more :)
 
-
-
 Nov 20,2020
 
 I have found that kf doesn't really have an effect in my community  level facilitation
@@ -47,3 +45,54 @@ Dec 15,2020
 
 I changed three things: k's are now 0, there is now less metabolites and species, and their numbers are not the same. With this changes, the behaviour gets inverted, which is cool. However, it is also weaker. I am seeing if adding the kc and kf's intensifies the relationship, and keeps the behaviour inverted. The next step will be to keep the difference of metabolites and species high, but increasing the number of species and metabolites.
 The problem with doing this is that: if my dynamics only work when there are more metabolites than species, that is not very realistic, since normally it is actually the opposite; more species than metabolites
+
+Dec 16,2020
+
+After running simulations with and without the constants, for a small system, this are the observations:
+	1. The observed correlations are smaller than for a big system (max of 0.3, as opposed to max of 0.5 for the big one). I also run simulations for the smaller system with and without the constants. Without the constants, I got the desired  dynamics for high leakage. That  is, negative corelation. When I imposed the constants, the correlation was inverted, and smaller. It appears to me that constants do exagerate correlations, but they do so in the wrong direction.
+
+Now I am running simulations with a big sistem (25 species, 75 metabolites) without the constants. Hopefully the correlation will increase in the right direction this time. 
+
+I also want to run the coalescence of two very simple communities to check that I am getting what is expected. Lets do that right now. 
+
+Dec 17,2020
+
+Okay, so the simulations worked as expected. after running a big system without the constants, the correlation increased in the right direction. Therefore, my dynamics seem to emerge when the number  of metabolites is higher than the number of species, and invert when the opposite happens. On top of this, another observation is that my x axis spans very little space. I think this is because of the constants not being varied, and therefore the communities that I  sample being very very similar.
+To eliminate the  possibility that the  constants kc and kf are screwing things up, I am going to run experiments varying them (hopefully this will give me an x axis that spans more space.
+
+I have run the coalescence test, and it works. This means that probably the algorithm of coalescence is well writen. Thereore, I think the problem is that the metabolic matrix is common to the whole  community, and therefore there is no really much variation that can happen. (see plot with no ks, and difference in species and metabolites). The effect is there, but is very mild. I wanted to exaggerate this effect by changing the constants kc and kf. They did exaggerate the effect, but not in the right direction. For some reason, they did the opposite! I honestly expect the results with the constants allowed to change to not be satisfactory. Only allowing D to change for every individual will yield what I want. So I am going to start implementing that, which shouldn't be too hard?
+
+To change D, and make it species dependant instead of community dependant, maybe I can just combine c and D in some manner? 
+
+Dec 18,2020
+
+The simulations for 25 sp and 75 met, allowing to vary the constants gives me the wrong correlation (as expected). I don't know why,  but it is what happens. I think I am going to turn off the constants and start varying D. Hopefully then my dynamics will emerge nicely
+
+I have plotted heatmap of the cohesion as a function of kc and kf, for different values of leakage. These are all my simulations, and its a nice way to visualize the whole parameter range. I have found  that depending on the leakage, the cohesion as a function of kc and kf varies like C (for low leakage) or like F (for high leakage). C varies exponentially with kc, but it barely varies with kf. Note that however, the maximum of C is not reached when kc is maximum, but a column before that! F varies linearly with kf, but also with kc, that is why the heatmaps of F are qualitatively different from the ones of C. Particularly, the facilitation levels are dependent of the competition levels. That is why, when there is no competition (kc = 0) kf doesn't have an effect on F. However, as kc increases (and C) kf becomes important in the facilitation levels. Thus, the maximum facilitation levels are achieved when kf and kc are maximum! That is why the cohesion transitions from the heatmap of C, to the heatmap of F as leakage goes up. This behaviour explains the inversion on the behaviour of the  similarity coheseion plot when the constants are switched on. According to the correlation barplots when enforcing facilitaiton and competition, the more cohesive communities do worse than the less cohesive communities. However, that is not quite right, because what I am calling cohesive communities, are not those in which facilitation is high and comptition is low, no. They are those in which both competition and facilitation are high! To fix that, maybe I can give less weight to the facilitation (or none, at all).
+Also, the correlation is the expected one for low leakage because the effect of facilitation is low, and high coheison levels are reached in the regime of low competition (independent facilitation). 
+Lets wait until my simulations are done, and then go ahead and calculate everything but giving the facilitation a lowe weight.
+
+Dec 21,2020
+
+Something I don't quite understand is the richness heatmap as a function of kf and kc. In general, richness is higher when competition levels are lower. When leakage levels are low, richness is higher at higher values of kf. However, at increasing levels of leakage, higher richnesses are concentrated at lower levels of kf. this means, that communities that are potentially less facilitative, are more diverse when leakagae is high, but less diverse when leakage is low. 
+The effect is the saame in the correlation plots: when leakage increases, less facilitative communities are also more succesful in coalescence. I should check wether biodiversity is related to coalescence success. Even though To isolate this effect from selection effects, I can coalesce 1 community oof richness 5 with one community with 5 species sampled from a richer community.  
+But back to the inversed effect: When leakage increases, less facilitative communitie tend to do better, and are more rich. Is it actually that these less facilitative communities are also less competitive? And these correlation between competitiveness and facilitation only emerges at high leakage? At low leakage its unimportant. Why? I know why. 
+The problem is that F is completely dependent on C. At low leakage I am looking at C. I see that more cohesive communities (less competitive ones) do better. As leakage increases, I appear to be seeing the opposite, less cohesive communities do better. In reality, I am seeing the same thing: less competitive communitiess do better, and less competitive communities are also less facilitative ones. Since I am weighting facilitation more, then it looks like the less facilitative you are, the worse you do. However, what I am seeing is the effect of compeetition through the lens of facilitation. Those communities are less competitive. So actually, if I want to test the effect of facilitation, I need to do so in communities where competition is roughly the same. 
+
+I think the richness plot as a function of kc and kf doesn't suffer of the same problem as my results, because it doesn't involve F and C calculations, which are ill-defined. Instead, the richness plot represents how for increasing levels of leakage, diverse environments require a less facilitative regimes (the facilitation demanded by bacteria is being covered by the leakage already). It therefore seems that very high facilitation is not optimal when the leakage is already high. 
+
+Dec 22,2020
+
+Hoy he corrido las simulaciones en las que kc se mantiene constante, y he obtenido basicamente los mismos resultados, que aquellas comunidades mas cohesivas sufren mas extinciones... Porque cuanto mayor es delta de theta, menor es la similaridad del outcome a C1 (+deltaTheta implica C1 mas cohesion
+Ahora estoy corriendo simulaciones en las que la cohesion la calculo directamente sin tener en cuenta el valor de la competicion (dividiendo entre C). Creo que de esta manera estare solo concentrado en los efecto de la facilitacion. 
+De todas formas, even if I obtain the correct result, would it be good enough? I am eliminating basically the effect of competition... 
+
+Dec 23,2020
+
+Hoy quiero cambiar la medida de similaridad. En vez de medir el producto escalar de las abundancias, lo que voy a hacer es medir la supervivencia, o sea que las abundancias son binarias: 1/0.
+Por ejemplo, si todas las especies de C1 mueren en la mezcla, el producto CR*C1 sera 0. Si una vive, sera 1, si viven 2, sera 2... A continuacion mido la similaridad con la comunidad 2 CR*C2, y me da tambien un numero entre 0 y r(C2). Despues normalizo esos numeros dividiendo entre r(C1) o r(C2) para que caigan entre 0 y 1. Tengo 2 numeros entre 0 y 1 que me miden el parecido a C1 y a C2 de CR. Si a continuacion, tomo la diferencia entre S1 y S2, D = S1 - S2, y el numero es negativo, es que la resultante se parece mas a S2. En caso contrario, se parece mas a S1
+
+Dec 28,2020
+
+I have started performing simulations where s > m. I call them saturated. Also performed coalescence events between communities of l = 0.5 and kc = 0. Not many, but I obtain a negative correlation, which is the opposite of what I would expect. I am assembling mmore communities now with the same conditions. I am going to perform a larger amount of coalescence events to see if this correlation is still opposite. Then I will simulate stuff with different kc values, and finally with different l values.
+I have run same experiment, but this time with more communities so that the standard error is less and the correlation is more reliable. The results don't change. The correlation is negative, which makes me think that the real problem is that my measure of facilitation is in reality a mesure of competition (because it increases when competition increases, not when facilitation increases). Not letting kc vary doesn't fix the problem because the correlation is still there. What I need, is to eliminate the correlation of facilitation and competititon, that is what I need. How can I do that? 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__appname__ = '[App_name_here]'
+__appname__ = '[sampling_no_structure.py]'
 __author__ = 'Pablo Lechon (plechon@ucm.es)'
 __version__ = '0.0.1'
 
@@ -9,30 +9,11 @@ __version__ = '0.0.1'
 import sys
 import numpy as np
 import pandas as pd
-from scipy.integrate import solve_ivp
-import itertools
 import matplotlib.pylab as plt
-
-## CONSTANTS ##
-
-global seed; seed = 69
+import itertools
+from functions import class_matrix
 
 ## FUNCTIONS ##
-def maintenance(c, cost = 0.1):
-    '''
-    Calculates maintenance cost based on number of metabolic pathways
-    '''
-
-    #Get number of species
-    s = np.shape(c)[0]
-    #Get number of pathways of each species
-    n_path = c.sum(axis = 1)
-    fluc = np.random.normal(0, 0.1, size = s)
-    for i in range(len(fluc)):
-        while abs(fluc[i]) > 0.1:
-            fluc[i] = np.random.normal(0, 0.1)
-    m = cost*n_path + fluc
-    return(m)
 
 def rescaling(v):
     '''
@@ -71,6 +52,21 @@ def crossfeeding_matrix(demands, m, kf):
     for i in range(m):
         D[i,:] = rescaling(D[i,:])
     return(D)
+
+def metabolic_matrix_nostruct(kf, spar, demands, m, s):
+    '''
+    Generage vector of concentration parameters of a Dirichlet distribution
+
+    Parameters: 
+        kf (float): Facilitation constant
+        s  (float): Sparsity parameter
+        demands (1xm): Number of consumers of each resource
+        m (int: Number of resources
+    '''
+    n_it = m 
+    #Sample D according to the demands vector
+    D = np.random.dirichlet((1 + kf*demands)/spar, size = m)
+    return D
 
 def sampling_probability(kc, cumulative_demand, m):
     '''
@@ -121,51 +117,49 @@ def preference_matrix(m, s, kc, beta, n_r):
         c[i,ind] = 1
     return c
 
-def equations(t, z, params):
+def main(argv):
+    '''Main function'''
 
-    '''
-    Diferential equations of marsland model in matrix form
+    #Number of resources
+    m = 60
+    #Number of species
+    s = 60
+    #Set vectors of kf and kc
+    kf_vec = np.array([0.3, 0.5, 0.6])
+    n_kf = len(kf_vec)
+    Kc_vec = np.array([0.4, 0.5, 0.6])
+    n_kc = len(Kc_vec)
+    c_mat = preference_matrix(m, s, kf_vec[2], beta = 5, n_r = None)
+    #Calculate demands as the sum of the rows of c
+    demands = np.sum(c_mat, axis = 0)
+    D = metabolic_matrix_nostruct(kf_vec[0], 0.05, demands, m, s)
+    CD = c_mat@D
+    plt.imshow(c_mat@D)
+    np.savetxt('../data/effective_D.csv', CD, delimiter = ',')
+    plt.show()
+    #Plot
+    fig, axs = plt.subplots(2, n_kc, figsize=(10, 6))
+    #Sample metabolic preferences for all species
+    #for k in range(n_kc): 
+    #    c_mat = preference_matrix(m, s, kf_vec[k], beta = 5, n_r = None)
+    #    #Calculate demands as the sum of the rows of c
+    #    demands = np.sum(c_mat, axis = 0)
+    #    D = metabolic_matrix_nostruct(kf_vec[k], 0.05, demands, m, s)
+    #    np.savetxt('../data/c_mat' + str(k) + '.csv', c_mat, delimiter = ',')
+    #    np.savetxt('../data/D_mat' + str(k) + '.csv', D, delimiter = ',')
+    #    axs[1][k].imshow(D)
+    #    axs[1][k].set_title('kf = ' + str(kf_vec[k]))
+    #    axs[0][k].imshow(c_mat)
+    #    axs[0][k].set_title('kc = ' + str(Kc_vec[k]))
+    ##Sample metabolic matrix
+    #plt.tight_layout()
+    #plt.show()
+    return 0
 
-    Parameters: 
-                s (int): number of species
-                m (int): number of resources
-                g (sx1): proportionality constant harvested energy --> abundance
-                N (sx1): abundance of each strain
-                c (sxm): preference matrix of the community
-                l (mx1): leakage factor of each resource
-                x (sx1): maintenance cost of each species
-                D (mxm): metabolic matrix of community
-                coal (bool): is the assembly a coalescence event, or not?
+## CODE ##
 
-    Output:
-                list (1x(s+m)): abundance of each species and resource after
-                                one time iteration
-    '''
-
-    #Unpack parameter values
-    s, m,  g, c, l, x, D, K, t, coal = map(params.get, 
-                                     ('s','m','g','c','l','x','D', 'K', 't',
-                                      'coal'))
-    #Separate species and resource vector and reshape them to columns vectors
-    N = np.array(z[0:s]).reshape(s,1)
-    R = np.array(z[s:m+s]).reshape(m,1)
-    if not coal :
-        #Compute one iteration step
-        dNdt = g * N * (c @ ((1 - l) * R) - x)
-        #Normal equation for resources
-        dRdt = K - 1 / t * R - (c.transpose() @ N) * R + \
-               D.transpose() @ ((l * R) * c.transpose()) @ N
-    if coal:
-        #Extend the vector of resources
-        Re = np.vstack( [R]*(int(np.shape(D)[0]/m)) )
-        #Compute one iteration step
-        dNdt = g * N * (c @ ((1 - l) * Re) - x)
-        #Construct matrix to sum the effects on resource due to each community
-        sum_mat = np.concatenate([np.identity(m)]*(int(np.shape(D)[0]/m)), 
-                                 axis = 1)
-        #Sum the effect of the two communities in the last term
-        #1 / t * R
-        dRdt = K - sum_mat @ ((c.transpose() @ N) * Re + \
-               D.transpose() @ ((l * Re) * c.transpose()) @ N)
-    return(list(dNdt.reshape(s))+list(dRdt.reshape(m)))
-    
+if (__name__ == '__main__'):
+    status = main(sys.argv)
+    sys.exit(status)
+     
+     

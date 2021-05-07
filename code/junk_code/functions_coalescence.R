@@ -89,3 +89,56 @@ best_binning = function(x, y, n_breaks, tol = 10, alpha = 0.2){
   }
   return(b)
 }
+
+resources_preferences = function(kc_vec, m, c_mat, simulations){
+  #Function to determine two matrices. First, the matrix of number of consumers
+  #per resource for each value of kc. Second, frequency of each number of
+  #preferences for each value of kc.
+  
+  #Prealocate a matrix of distributions of preferences
+  n_preferences = matrix(0, nrow = length(kc_vec),
+                         ncol = as.integer(m/3),
+                         dimnames = list(kc_vec))
+  #Prealocate a matrix of number of consumers per resource.
+  n_consumers = matrix(0, nrow = length(kc_vec),
+                       ncol = m, dimnames = list(kc_vec))
+  for (j in seq(length(kc_vec))){
+    #Get simulation indices for which kc = j
+    ind = which(simulations$kc == kc_vec[j])
+    #Find the rows of all_c that belong to one of these indices.
+    coinc = (c_mat$X + 1)%in%ind
+    #Mask c_matrix
+    c_kc = c_mat[coinc,] 
+    #Calculate the number of preferences of each strain
+    n_path = rowSums(c_kc[,2:(length(c_kc)-1)])
+    #store in the matrix of preferences
+    n_preferences[j,] = table(n_path)
+    #Calculate number of rows
+    n_sim = unique(c_kc$X)
+    #Preallocate matrix of n_consumers per community
+    n_cons_community = matrix(0, nrow = length(n_sim),
+                              ncol = m)
+    #Iterate over rows
+    for (i in seq(length(n_sim))){
+      #Select rows of one community
+      rows = which(c_kc$X == n_sim[i])
+      #Subset chunk of interest
+      c_ji = c_kc[rows[1]:rows[length(rows)],
+                  2:(length(c_kc)-1)]
+      #Calculate the number of consumers per resource
+      n_consumers_i = sort(as.numeric(colSums(c_ji)), decreasing = T)
+      n_cons_community[i,] = n_consumers_i
+    }
+    #Once I the number of consumers per resource for all communities, I average accross axis = 0
+    n_consumers[j,] = colMeans(n_cons_community)
+  }
+  return(list('n_pref' = n_preferences, 'n_cons' = n_consumers))
+}
+
+facilitation_cycle = function(l){
+  return(l*(1-l)/(1-l*(1-l)))
+}
+
+competition_cycle = function(l){
+  return((1-l)/(1-l*(1-l)))
+}

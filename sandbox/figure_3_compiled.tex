@@ -1,0 +1,22 @@
+\documentclass{article}
+% All LaTeX documents including % tikz() output must use this % package!
+\usepackage{tikz}
+\usepackage{amssymb}
+\usepackage{lscape}
+\usepackage{geometry}
+\geometry{
+	a2paper
+}
+\begin{document} 
+	\begin{landscape}
+		\begin{figure}[!h]
+			\centering
+			% The output from tikz() % is imported here. 
+			
+			\input{figure_3.tex}
+			
+			\caption{Simple Example} 
+		\end{figure}
+	\end{landscape}
+	
+\end{document}
