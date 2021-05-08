@@ -48,8 +48,9 @@ def main(argv):
     kc = np.linspace(0.01, 0.9, num = 3)
     kf = np.linspace(0, 0.99, num = 3)
     K = np.linspace(0, 0.9, num = 2)
-    l = np.array([0.1, 0.2, 0.3, 0.4, 0.50,
-                  0.50, 0.6, 0.7, 0.8, 0.9])
+    #l = np.array([0.1, 0.2, 0.3, 0.4, 0.50,
+    #              0.50, 0.6, 0.7, 0.8, 0.9])
+    l = np.array([0.1, 0.9])
     nsim = range(100)
     #Create N-D parameter grid 
     product = itertools.product(kc, kf, K, l, nsim)
@@ -70,6 +71,10 @@ def main(argv):
     df['r'] = np.zeros(ncol, dtype = int)
     #Preallocte column for total resouce abundance at equilibrium
     df['ER'] = np.zeros(ncol)
+    #Preallocte column for resouce abundance standard deviation
+    df['std'] = np.zeros(ncol)
+    #Preallocte column for resouce abundance mean
+    df['mean'] = np.zeros(ncol)
     #Preallocate columns for preference and metabolic matrices
     all_c = pd.DataFrame(data = np.zeros(shape = (s*ncol, m + 1), dtype = int))
     #Note that I add one column at the end to specify wether that species is 
@@ -124,6 +129,8 @@ def main(argv):
         #Record resource abundance at equilibrium
         stable_concentration = sol.y[s:s+m, -1]
         df.loc[i, 'ER'] = sum(stable_concentration)
+        df.loc[i, 'std'] = np.std(stable_concentration)
+        df.loc[i, 'mean'] = np.mean(stable_concentration)
         #Get abundance of species at stable state
         stable_abundance = sol.y[0:s,-1]
         #Store in dataframe
