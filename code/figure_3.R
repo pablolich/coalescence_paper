@@ -9,6 +9,7 @@ library(ggpubr)
 library(gridExtra)
 library(reshape2)
 library(tikzDevice)
+library(ggstar)
 #Colour Palettes Based on the Scientific Colour-Maps
 library(scico)
 source('functions_coalescence.R')
@@ -19,47 +20,26 @@ source('functions_coalescence.R')
 
 #########################################################################
 #A. Community matrix of effective leakage
-
-#Function to reorder rows and colums
-plot_matrix <- function(A){
-  n <- nrow(A)
-  A <- as.data.frame(A)
-  A$row <- n:1
-  colnames(A) <- c(1:n, "row")
-  dA <- A %>% gather(col, value, -row)
-  pl <- ggplot(dA, aes(x = as.numeric(row), y = as.numeric(col), fill = value)) + 
-    geom_tile(aes(color = value)) + xlab("Metabolic by-product") + 
-    ylab("Species") +
-    theme(panel.background = element_blank(),
-          legend.position = 'none',
-          axis.text = element_text(color = 'white'),
-          axis.ticks  = element_blank(),
-          axis.title.x = element_text(size = 21,
-                                      hjust = 0.1,
-                                      margin = margin(t = -10)),
-          axis.title.y = element_text(size = 21,
-                                      margin = margin(r = -10)),
-          plot.margin = margin(b = 10),
-          aspect.ratio = 1)+
-    scale_color_scico(palette = 'lajolla', direction = -1)+
-    scale_fill_scico(palette = 'lajolla', direction = -1)
-  return(pl)
-}
-
-#Effective D  micro-struct
 Deff_micro = as.matrix(read.csv('../data/effective_D.csv', header = F))
 dimnames(Deff_micro) = list(as.character(seq(60)), as.character(seq(60)))
-# calculate eigenvalues/vectors of A and A^t
-eA <- eigen(Deff_micro)
-etA <- eigen(t(Deff_micro))
-# use the first eigenvector of A to order the rows, 
-# the first of eigenvector of A^t to order the cols
-order_rows <- order(eA$vectors[,1])
-order_cols <- order(etA$vectors[,1])
-A_reorderd <- Deff_micro[order_rows, order_cols]
-#Plot matrix
-Deff_micro = plot_matrix(A_reorderd)
-
+melt_Deff_micro = melt(Deff_micro)
+Deff_micro = ggplot(data = melt_Deff_micro, 
+                    aes(x = Var2, y = rev(Var1), fill = value)) +
+  geom_tile(aes(col = value))+
+  theme(panel.background = element_blank(),
+        legend.position = 'none',
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 21,
+                                    hjust = 0.8,
+                                    margin = margin(t = 0)),
+        axis.title.y = element_text(size = 21,
+                                    margin = margin(r = 9)),
+        plot.margin = margin(b = 10),
+        aspect.ratio = 1)+
+  scale_color_scico(palette = 'lajolla', direction = -1)+
+  scale_fill_scico(palette = 'lajolla', direction = -1)+
+  labs(y = ('Species'), x = ('Metabolic by-product'))
 
 #########################################################################
 #B. Average community facilitation and competititon
@@ -100,7 +80,7 @@ C_F_pref = ggplot(data = my_dat, aes(x = l))+
         legend.text = element_text(size = 20),
         legend.spacing.x = unit(2, 'mm'),
         legend.direction = 'horizontal',
-        legend.position = c(0.55, 0.9),
+        legend.position = c(0.6, 0.9),
         axis.title.x = element_text(size = 21, margin = margin(t = -15)),
         axis.title.y = element_text(size = 21, margin = margin(r = -20)),
         axis.text = element_text(size = 20))+
@@ -208,58 +188,177 @@ similarity_micro = ggplot(data = df,
                      labels = c("-0.5",  "0", "0.5"))+
   labs(colour = 'Leakage', fill = 'Leakage')
 
-
 #########################################################################
 #D. Depletion-cohesion plot
 #Average over simulations
+
+simulations = read.csv('../data/simulation_results_samraat_suggestions_3.csv')
+simulations_pref = simulations[(simulations$K != 0.9),]
+sim_l = aggregate(simulations_pref,  list(l = simulations_pref$l), FUN = mean)[-1]
+my_dat = sim_l %>% select(4, 9, 10, 11)
+
 simulations_pref = simulations_pref[(simulations_pref$ER<1000),]
-simulations_pref = simulations_pref[(simulations_pref$l == 0.1) |
-                                      (simulations_pref$l == 0.5) |
-                                      (simulations_pref$l == 0.9), ]
-depletion = ggplot(data = simulations_pref,
-           aes(x = (Fav/l - (Cav/(1-l) + Cbav/l)),
-               y = ER,
-               fill = as.factor(l)))+
-      geom_point(color = 'grey', pch = 21, size = 2)+
-      theme(panel.background = element_blank(),
-            panel.border = element_rect(color = 'black', fill=NA),
-            aspect.ratio = 1,
-            legend.title = element_text(size = 21, margin = margin(r = 7)),
-            legend.key = element_blank(),
-            axis.title = element_text(size = 21),
-            legend.position = 'top',
-            legend.spacing.x = unit(3,'mm'),
-            legend.margin = margin(b =  0),
-            legend.direction = 'horizontal',
-            legend.text = element_text(size = 21),
-            axis.text = element_text(size = 20),
-            axis.title.y = element_text(margin = margin(t = 0, 
-                                                        r = -10, 
-                                                        b = 0, 
-                                                        l = 0),
-                                        hjust = 0.3))+
-        scale_fill_scico_d(palette = 'lajolla', direction = -1)+
-      labs(fill = 'Leakage',
-           x = 'Intinsic cohesion ($\\hat{\\Theta}$)',
-           y = 'Total resource abundance ($R^{\\bigstar}_{tot}$)')+
+simulations_pref_01 = simulations_pref[(simulations_pref$l == 0.1),] 
+depletion_01 = ggplot(data = simulations_pref_01,
+           aes(x = (Fav/l - (Cav/(1-l) + Cbav/l))))+
+    geom_point(aes(shape = as.factor(kc),
+                   y = ER/r,
+                   fill = r,
+                   color = r), 
+               # color = 'grey',
+               # stroke = 0.1
+               size = 2.5)+
+    theme(panel.background = element_blank(),
+          panel.border = element_rect(color = 'black', fill=NA),
+          aspect.ratio = 1,
+          legend.title = element_text(size = 21, margin = margin(r = 7)),
+          legend.key = element_blank(),
+          axis.title = element_text(size = 18),
+          legend.position = 'right',
+          legend.spacing.x = unit(0,'mm'),
+          legend.margin = margin(t = 0),
+          legend.direction = 'horizontal',
+          legend.text = element_text(size = 18),
+          axis.text = element_text(size = 20),
+          axis.title.y = element_text(margin = margin(t = 0, 
+                                                      r = 7, 
+                                                      b = 0, 
+                                                      l = 0),
+                                      hjust = -0.3))+
+      scale_fill_scico(palette = 'lajolla', direction = -1)+
+      scale_shape_manual(values = c(21, 22, 24),
+                         labels = c('0', '0.5', '0.9'))+
+      scale_color_scico(palette = 'lajolla', direction = -1)+
+      labs(fill = 'Species\nrichness',
+           color = 'Species\nrichness',
+           shape = '$k_c$',
+           x = 'Intrinsic cohesion ($\\hat{\\Theta}$)',
+           y = 'Resource depletion level ($R^{\\bigstar}_{tot}/r$)')+
       scale_x_continuous(expand = c(0.03, 0),
                          breaks = c(-4, 0),
                          limits = c(-4, 0.1),
                          labels = c("-4",  "0"))+
-      scale_y_continuous(expand = c(0.03, 0),
-                         breaks = c(0, 550),
-                         labels = c("0",  "550"))+
-      guides(fill = guide_legend(override.aes = list(size=5)))
+      # scale_y_continuous(expand = c(0.03, 0),
+      #                    breaks = c(0, 27),
+      #                    labels = c("0",  "27"))+
+      scale_y_continuous(expand = c(0.04, 0),
+                         breaks = c(0, 45),
+                         limits = c(0, 46),
+                         labels = c("0",  "45"))+
+      annotate('text', x = -2.9, y = 6.43, label = '$l = 0.1$',
+               size = 7)
+  
+legend <- get_legend(depletion_01)
 
+depletion_01 <- depletion_01 + theme(legend.position="none")
+#########################################################################
+#E Depletion-cohesion plot
+
+  simulations = read.csv('../data/simulation_results_samraat_suggestions_3.csv')
+  simulations_pref = simulations[(simulations$K != 0.9),]
+  sim_l = aggregate(simulations_pref,  list(l = simulations_pref$l), FUN = mean)[-1]
+  my_dat = sim_l %>% select(4, 9, 10, 11)
+  
+  simulations_pref = simulations_pref[(simulations_pref$ER<1000),]
+  simulations_pref_09 = simulations_pref[(simulations_pref$l == 0.9),] 
+  depletion_09 = ggplot(data = simulations_pref_09,
+         aes(x = (Fav/l - (Cav/(1-l) + Cbav/l)),
+             y = ER/r))+
+    geom_point(data = simulations_pref_09,
+               aes(shape = as.factor(kc),
+                   y = ER/r,
+                   fill = r,
+                   color = r), 
+               # color = 'grey',
+               # stroke = 0.1
+               size = 2.5)+
+    theme(panel.background = element_blank(),
+          panel.border = element_rect(color = 'black', fill=NA),
+          aspect.ratio = 1,
+          axis.title = element_text(size = 21),
+          legend.position = 'none',
+          axis.text = element_text(size = 20),
+          axis.title.y = element_text(margin = margin(t = 0, 
+                                                      r = -10, 
+                                                      b = 0, 
+                                                      l = 0)))+
+    scale_fill_scico(palette = 'lajolla', direction = -1)+
+    scale_color_scico(palette = 'lajolla', direction = -1)+
+    scale_shape_manual(values = c(21, 22, 24))+
+  labs(fill = 'Richness',
+       colour = 'Richness',
+       x = '$\\hat{\\Theta}$',
+       y = '$R^{\\bigstar}_{tot}/r$')+
+  scale_x_continuous(expand = c(0.04, 0),
+                     breaks = c(-4, 0),
+                     limits = c(-4, 0.1),
+                     labels = c("-4",  "0"))+
+  scale_y_continuous(expand = c(0.04, 0),
+                     breaks = c(0, 45),
+                     labels = c("0",  "45"))+
+  annotate('text', x = -2.9, y = 6.43, label = '$l = 0.9$',
+           size = 7)
+  #########################################################################
+  #F. Depletion-cohesion plot
+
+  simulations = read.csv('../data/simulation_results_samraat_suggestions_3.csv')
+  simulations_pref = simulations[(simulations$K != 0.9),]
+  sim_l = aggregate(simulations_pref,  list(l = simulations_pref$l), FUN = mean)[-1]
+  my_dat = sim_l %>% select(4, 9, 10, 11)
+  
+  simulations_pref = simulations_pref[(simulations_pref$ER<1000),]
+  simulations_pref_05 = simulations_pref[(simulations_pref$l == 0.5),] 
+  depletion_05 = ggplot(data = simulations_pref_05,
+                        aes(x = (Fav/l - (Cav/(1-l) + Cbav/l)),
+                            y = ER/r))+
+    geom_point(data = simulations_pref_05,
+               aes(shape = as.factor(kc),
+                   y = ER/r,
+                   fill = r,
+                   color = r), 
+               # color = 'grey',
+               # stroke = 0.1
+               size = 2.5)+
+    theme(panel.background = element_blank(),
+          panel.border = element_rect(color = 'black', fill=NA),
+          aspect.ratio = 1,
+          axis.title = element_text(size = 21),
+          legend.position = 'none',
+          axis.text = element_text(size = 20),
+          axis.title.y = element_text(margin = margin(t = 0, 
+                                                      r = -10, 
+                                                      b = 0, 
+                                                      l = 0)))+
+    scale_fill_scico(palette = 'lajolla', direction = -1)+
+    scale_color_scico(palette = 'lajolla', direction = -1)+
+    scale_shape_manual(values = c(21, 22, 24))+
+    labs(fill = 'Richness',
+         colour = 'Richness',
+         x = '     ',
+         y = '     ')+
+    scale_x_continuous(expand = c(0.03, 0),
+                       breaks = c(-4, 0),
+                       limits = c(-4, 0.1),
+                       labels = c("-4",  "0"))+
+    scale_y_continuous(expand = c(0.04, 0),
+                       limits = c(0, 46),
+                       breaks = c(0, 45),
+                       labels = c("0",  "45"))+
+    # scale_y_continuous(expand = c(0.03, 0),
+    #                    breaks = c(0, 30),
+    #                    labels = c("0",  "30"))+
+    annotate('text', x = -2.9, y = 6.43, label = '$l = 0.5$',
+             size = 7)
 #########################################################################
 #Plot alltogether
-lay <- rbind(c(1, 2, 2, 3, 3),
-             c(4, 2, 2, 3, 3))
+lay <- rbind(c(1, 2, 2, 3, 4),
+             c(6, 2, 2, 5, 7))
 options( tikzLatexPackages = c( getOption( "tikzLatexPackages" ), "\\usepackage{amssymb}"))
-tikz("../sandbox/figure_3.tex", 
+tikz("../sandbox/figure_3.tex",
      width = 15.33, height = 5.99,
      standAlone = TRUE)
-grid.arrange(Deff_micro, similarity_micro, depletion, C_F_pref,
+grid.arrange(Deff_micro, similarity_micro, depletion_05, depletion_09, 
+             depletion_01, C_F_pref, legend,
              layout_matrix = lay)
 dev.off()
 

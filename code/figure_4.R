@@ -205,7 +205,7 @@ F_av = aggregate(Fmix ~ l1,
 df_fac = data.frame(rbind(as.matrix(F_av), as.matrix(Fext_av), as.matrix(Flooser)))
 df_fac['type'] = c(rep('Mix', length(unique(Fext_av$l1))), 
                rep('Extinct', length(unique(Fext_av$l1))),
-               rep('Looser', length(unique(Fext_av$l1))))
+               rep('Loser', length(unique(Fext_av$l1))))
 coextinctions = ggplot(data = df_fac,
        aes(x = l1, 
            y = Fmix/l1,

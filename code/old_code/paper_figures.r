@@ -20,6 +20,7 @@ if (length(args) >= 1){
 } else{
   coal_results = read.csv('../data/coalescence_results.csv')
 }
+coal_results = read.csv('../data/coalescence_clean_results_0.00.0depletion_test.csv')
 
 #DATA WRANGLING
 #Set parameter grid of analysis
@@ -36,38 +37,123 @@ df = data.frame(expand.grid(list(point = vec_points,
                                  #kc = vec_kc, 
                                  leakage = vec_leak)))
 #Add columns to dataframe for plotting purposes
+df['xC'] = 0
+df['xF'] = 0
 df['x'] = 0
 df['S'] = 0
-df['x_err'] = 0
+df['x_errC'] = 0
+df['x_errF'] = 0
+df['x'] = 0
 df['S_err'] = 0
 #Get number of total simulations
 n_sim = length(grid$leakage)
 #Get number of breaks
 n_mids = length(vec_points) 
 #Iterate over it and generate plotting points
+par(mfrow=c(3,3), mar = c(3.8, 3.8, 0, 2))
 print('Binning data')
 for (i in seq(n_sim)){
   print(i)
   coal_results_i = coal_results[#coal_results$kc == grid$kc[i] & 
     coal_results$l1 == grid$leakage[i],]
   #x = coal_results_i$O1 - coal_results_i$O2
-  x = coal_results_i$Fav1 + coal_results_i$Cav2 - coal_results_i$Fav2 - coal_results_i$Cav1
-  #Normalize x
-  x = x/max(abs(x))
-  # x = coal_results_i$H1 - coal_results_i$H2
-  # x = coal_results_i$r1 - coal_results_i$r2
-  y = coal_results_i$S
-  grid['cor'][i,] = cor(x, y, method = 'spearman')
-  group = bin_data(x, y, n_mids + 1, centralize = 'mean')
-  df[((i-1)*n_mids+1):(i*n_mids),]$x = group$x_binned
-  df[((i-1)*n_mids+1):(i*n_mids),]$S = group$y_binned
-  df[((i-1)*n_mids+1):(i*n_mids),]$x_err = group$sigma_x
-  df[((i-1)*n_mids+1):(i*n_mids),]$S_err = group$sigma_y
-  # df$x = group$x_binned
-  # df$S = group$y_binned
-  # df$x_err = group$sigma_x
-  # df$S_err = group$sigma_y
+  xC = coal_results_i$Cav2  - coal_results_i$Cav1
+  xF = coal_results_i$Fav1 - coal_results_i$Fav2
+  x = coal_results_i$Cav2  - coal_results_i$Cav1 + 
+      coal_results_i$Fav1 - coal_results_i$Fav2
+  plot(x, coal_results_i$S, 
+       pch = 21, cex = 0.01,
+       xlab = '',
+       ylab = '',
+       col = rgb(red = 0, green = 0, blue = 0, alpha = 0.5))
+  title(ylab = expression(S[1][',2']),
+        xlab = expression(Theta[1]-Theta[2]),
+        line=2.1, cex.lab=1.5)
+  text(x = 0, y = 0.7, 
+       label = paste('l = ', as.character(grid$leakage[i])),
+       cex = 2)
+  plot(xF, coal_results_i$S,
+       pch = 21, cex = 0.01,
+       xlab = '',
+       ylab = '',
+       col = rgb(red = 0, green = 0, blue = 0, alpha = 0.5))
+  title(ylab = expression(S[1][',2']),
+        xlab = expression(F[1]-F[2]),
+        line=2.1, cex.lab=1.5)
+  plot(xC, coal_results_i$S,
+       pch = 21, cex = 0.01,
+       xlab = '',
+       ylab = '',
+       col = rgb(red = 0, green = 0, blue = 0, alpha = 0.5))
+  title(ylab = expression(S[1][',2']),
+        xlab = expression((C[1]-C[2])),
+        line=2.1, cex.lab=1.5)
+  
+  # #Normalize x
+  # # xC = xC/max(abs(xC))
+  # # xF = xF/max(abs(xF))
+  # # x = x/max(abs(x))
+  # # x = coal_results_i$H1 - coal_results_i$H2
+  # # x = coal_results_i$r1 - coal_results_i$r2
+  # y = coal_results_i$S
+  # #grid['cor'][i,] = cor(x, y, method = 'spearman')
+  # groupC = bin_data(xC, y, n_mids + 1, centralize = 'mean')
+  # groupF = bin_data(xF, y, n_mids + 1, centralize = 'mean')
+  # group = bin_data(x, y, n_mids + 1, centralize = 'mean')
+  # df[((i-1)*n_mids+1):(i*n_mids),]$xC = groupC$x_binned
+  # df[((i-1)*n_mids+1):(i*n_mids),]$xF = groupF$x_binned
+  # df[((i-1)*n_mids+1):(i*n_mids),]$x = group$x_binned
+  # df[((i-1)*n_mids+1):(i*n_mids),]$S = group$y_binned
+  # df[((i-1)*n_mids+1):(i*n_mids),]$x_errC = groupC$sigma_x
+  # df[((i-1)*n_mids+1):(i*n_mids),]$x_errF = groupF$sigma_x
+  # df[((i-1)*n_mids+1):(i*n_mids),]$x_err = group$sigma_x
+  # df[((i-1)*n_mids+1):(i*n_mids),]$S_err = group$sigma_y
+  # # df$x = group$x_binned
+  # # df$S = group$y_binned
+  # # df$x_err = group$sigma_x
+  # # df$S_err = group$sigma_y
 }
+
+#########################################################################################################
+## 2. SIMILARITY MACROSTRUCT
+#########################################################################################################
+ggplot(data = df, 
+       aes(x = xF, y = S))+
+  geom_ribbon(aes(ymin = S - S_err, ymax = S + S_err,
+                  group = leakage,
+                  fill = as.factor(leakage)), 
+              alpha = 0.9
+  )+
+  geom_line(aes(group = leakage,
+                color = as.factor(leakage)),
+            size = 1.5)+
+  labs(x = expression(paste("Parent cohesion difference ", "(", Theta[1]-Theta[2], ")")),
+       y = expression(paste("Similarity to parents ", "(", S[1][","][2], ")")))+
+  theme(aspect.ratio = 1,
+        legend.position = c(0.5, 0.13),
+        legend.spacing.y = unit(0,"cm"),
+        legend.title = element_text(size = 15, hjust = 0.5),
+        legend.text = element_text(size = 14),
+        legend.spacing.x = unit(1, 'mm'),
+        legend.key.size = unit(8,'mm'),
+        legend.key = element_rect(fill = NA, colour = NA),
+        legend.direction = 'horizontal',
+        legend.background = element_rect(fill = NA),
+        panel.background = element_blank(), 
+        panel.border = element_rect(color = 'black', fill=NA),
+        axis.title = element_text(size = 20),
+        axis.text = element_text(size = 15))+
+  scale_color_scico_d(palette = 'lajolla')+
+  scale_fill_scico_d(palette = 'lajolla')+
+  scale_x_continuous(expand = c(-0.06,0),
+                     breaks = c(-0.35, 0, 0.35),
+                     labels = c("-0.35",  "0", "0.35"))+
+  scale_y_continuous(expand = c(0,0),
+                     breaks = c(-0.3, 0, 0.3),
+                     labels = c("-0.3",  "0", "0.3"))+
+  labs(colour = 'Leakage', fill = 'Leakage')+
+  guides(colour = guide_legend(title.position = "bottom"),
+         fill = guide_legend(title.position = "bottom", ))
 
 #########################################################################################################
 ## 1. EFFECTIVE METABOLISM MICROSTRUCT
@@ -240,46 +326,7 @@ C_F_micro = ggplot(data = my_dat, aes(x = l))+
                      limits = c(0, 0.83))+
   labs(x = 'Leakage', y = 'Interaction')
 
-#########################################################################################################
-## 2. SIMILARITY MACROSTRUCT
-#########################################################################################################
-similarity_macro = ggplot(data = df, 
-            aes(x = x, y = S))+
-  geom_ribbon(aes(ymin = S - S_err, ymax = S + S_err,
-                  group = leakage,
-                  fill = as.factor(leakage)), 
-              alpha = 0.3
-  )+
-  geom_line(aes(group = leakage,
-                color = as.factor(leakage)),
-            size = 1.5)+
-  labs(x = expression(paste("Parent cohesion difference ", "(", Theta[1]-Theta[2], ")")),
-       y = expression(paste("Similarity to parents ", "(", S[1][","][2], ")")))+
-  theme(aspect.ratio = 1,
-        legend.position = c(0.5, 0.13),
-        legend.spacing.y = unit(0,"cm"),
-        legend.title = element_text(size = 15, hjust = 0.5),
-        legend.text = element_text(size = 14),
-        legend.spacing.x = unit(1, 'mm'),
-        legend.key.size = unit(8,'mm'),
-        legend.key = element_rect(fill = NA, colour = NA),
-        legend.direction = 'horizontal',
-        legend.background = element_rect(fill = NA),
-        panel.background = element_blank(), 
-        panel.border = element_rect(color = 'black', fill=NA),
-        axis.title = element_text(size = 20),
-        axis.text = element_text(size = 15))+
-  scale_color_scico_d(palette = 'lajolla')+
-  scale_fill_scico_d(palette = 'lajolla')+
-  scale_x_continuous(expand = c(-0.06,0),
-                     breaks = c(-0.35, 0, 0.35),
-                     labels = c("-0.35",  "0", "0.35"))+
-  scale_y_continuous(expand = c(0,0),
-                     breaks = c(-0.3, 0, 0.3),
-                     labels = c("-0.3",  "0", "0.3"))+
-  labs(colour = 'Leakage', fill = 'Leakage')+
-  guides(colour = guide_legend(title.position = "bottom"),
-         fill = guide_legend(title.position = "bottom", ))
+
 
 
 #########################################################################################################

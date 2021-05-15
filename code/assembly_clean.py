@@ -48,9 +48,8 @@ def main(argv):
     kc = np.linspace(0.01, 0.9, num = 3)
     kf = np.linspace(0, 0.99, num = 3)
     K = np.linspace(0, 0.9, num = 2)
-    #l = np.array([0.1, 0.2, 0.3, 0.4, 0.50,
-    #              0.50, 0.6, 0.7, 0.8, 0.9])
-    l = np.array([0.1, 0.9])
+    l = np.array([0.1, 0.2, 0.3, 0.4, 0.50,
+                  0.50, 0.6, 0.7, 0.8, 0.9])
     nsim = range(100)
     #Create N-D parameter grid 
     product = itertools.product(kc, kf, K, l, nsim)
