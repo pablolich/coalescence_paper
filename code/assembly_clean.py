@@ -12,8 +12,6 @@ import itertools
 from functions_clean import *
 import pandas as pd
 import progressbar
-#Erase
-import matplotlib.pylab as plt
 
 ## CONSTANTS ##
 
@@ -45,11 +43,12 @@ def main(argv):
     #Set initial conditions
     z0 = list(np.ones(s))+list(2*np.ones(m))
     #Create parameter vectors
-    kc = np.linspace(0.01, 0.9, num = 3)
-    kf = np.linspace(0, 0.99, num = 3)
-    K = np.linspace(0, 0.9, num = 2)
-    l = np.array([0.1, 0.2, 0.3, 0.4, 0.50,
-                  0.50, 0.6, 0.7, 0.8, 0.9])
+    kc = np.linspace(0.01, 0.9, num = 2)
+    kf = np.linspace(0, 0.99, num = 2)
+    K = np.linspace(0.9, 0.9, num = 1)
+    #l = np.array([0.1, 0.2, 0.3, 0.4, 0.50,
+    #              0.50, 0.6, 0.7, 0.8, 0.9])
+    l = np.array([0.1, 0.5, 0.9])
     nsim = range(100)
     #Create N-D parameter grid 
     product = itertools.product(kc, kf, K, l, nsim)
@@ -60,11 +59,9 @@ def main(argv):
     #Preallocate columns for C0 and F0 calculations
     ncol = len(df)
     df['C0av'] = np.zeros(ncol)
-    df['C0bav'] = np.zeros(ncol)
     df['F0av'] = np.zeros(ncol)
     #Preallocate columns for C and F calculations (after community assembly)
     df['Cav'] = np.zeros(ncol)
-    df['Cbav'] = np.zeros(ncol)
     df['Fav'] = np.zeros(ncol)
     #Preallocate column for richness
     df['r'] = np.zeros(ncol, dtype = int)
@@ -104,27 +101,38 @@ def main(argv):
         #Store in dataframe
         all_D[m*i:m*(i+1)]= D
         #Compute costs
-        maint_vec = maintenance(c) 
+        maint_vec = maintenance(c, df['l'][i]) 
         #Calculate competititon and facilitation  
-        F_cy = community_facilitation(c, c, D, df['l'][i], df['l'][i])
-        C_cy = community_competition(c, c, D, df['l'][i], df['l'][i])
+        Cmat = competition_matrix(c)
+        Fmat = facilitation_matrix(df['l'][i]*np.ones(s),
+                                   D, c)
+        #F_cy = community_facilitation(c, c, D, df['l'][i], df['l'][i])
+        #C_cy = community_competition(c, c, D, df['l'][i], df['l'][i])
         #Average non-zero elements to get community level facilitation and 
         #competition leaving out the 0 of the diagonal
-        df.loc[i, 'F0av'] = F_cy[1]
-        df.loc[i, 'C0av'] = C_cy[1]
-        df.loc[i, 'C0bav'] = C_cy[2]
-        #Calculate cost of each species
-        maint_vec = maintenance(c)
+        df.loc[i, 'F0av'] = (np.sum(Fmat)-np.trace(Fmat))/(Fmat.size - len(Fmat))
+        #Extract block diagonals
+        diags = extract_diag_blocks(Cmat, n_memb, n_memb) 
+        bool_block = 1 - class_matrix(len(Fmat), n_memb)
+        off_diags = Fmat[bool_block.astype(bool)]
+        df.loc[i, 'F0avi'] = np.mean(off_diags)
+        np.fill_diagonal(Fmat, 1)
+        df.loc[i, 'F0nd'] = np.mean(Fmat)
+        #df.loc[i, 'C0v'] = C_cy[1]
+        df.loc[i, 'C0av'] = (np.sum(Cmat)-np.trace(Cmat))/(Cmat.size - len(Cmat))
+        df.loc[i, 'C0avi'] = np.mean(diags)
+        np.fill_diagonal(Cmat, 1)
+        df.loc[i, 'C0nd'] = np.mean(Cmat)
         #Add sampled strategies, metabolic, costs, and leakage
         #to the parameter dictionary
         params['D'] = D
         params['c'] = c
         params['x'] = maint_vec.reshape(s,1)
-        params['l'] = df['l'][i]*np.ones(m).reshape(m,1)
+        params['l'] = df['l'][i]*np.ones(s).reshape(s,1)
         #Solve diferential equations
         sol = solve_ivp(lambda t,z: equations(t,z, params),
                         tspan, z0,
-                        method = 'BDF', atol = 0.0001 )
+                        method = 'BDF', atol = 0.0001)
         #Record resource abundance at equilibrium
         stable_concentration = sol.y[s:s+m, -1]
         df.loc[i, 'ER'] = sum(stable_concentration)
@@ -137,7 +145,8 @@ def main(argv):
         #Get indices of extant species
         ind_extant = np.where(stable_abundance > 1)[0]
         #Record species richness
-        df.loc[i, 'r'] = len(ind_extant)
+        r = len(ind_extant)
+        df.loc[i, 'r'] = r
         #Create a vector of extant species
         extant = -1*np.ones(shape = (s, 1))
         #Flip to 1 the extant ones
@@ -147,15 +156,40 @@ def main(argv):
         all_c[s*i:s*(i+1)] = c_tot
         #Get rid of these rows  in the matrix of preferences
         c_assembly = c[ind_extant,:]
-        #Recalculate competition and facilitation 
-        F_cy = community_facilitation(c_assembly, c_assembly, D, 
-                                      df['l'][i], df['l'][i])
-        C_cy = community_competition(c_assembly, c_assembly, D,
-                                     df['l'][i], df['l'][i])
+        #Recalculate competition and facilitation after assembly
+        Cmat = competition_matrix(c_assembly)
+        Fmat = facilitation_matrix(df['l'][i]*np.ones(r), D, c_assembly)
+        #F_cy = community_facilitation(c_assembly, c_assembly, D, 
+        #                              df['l'][i], df['l'][i])
+        #C_cy = community_competition(c_assembly, c_assembly, D,
+        #                             df['l'][i], df['l'][i])
+
         #Store
-        df.loc[i, 'Fav'] = F_cy[1]
-        df.loc[i, 'Cav'] = C_cy[1]
-        df.loc[i, 'Cbav'] = C_cy[2]
+        diags = extract_diag_blocks(Cmat, n_memb, n_memb) 
+        bool_block = 1 - class_matrix(len(Fmat), n_memb)
+        off_diags = Fmat[bool_block.astype(bool)]
+        df.loc[i, 'Fav'] = (np.sum(Fmat)-np.trace(Fmat))/(Fmat.size - len(Fmat))
+        df.loc[i, 'Favi'] = np.mean(off_diags)
+        np.fill_diagonal(Fmat, 1)
+        df.loc[i, 'Fnd'] = np.mean(Fmat)
+        #df.loc[i, 'C0v'] = C_cy[1]
+        df.loc[i, 'Cav'] = (np.sum(Cmat)-np.trace(Cmat))/(Cmat.size - len(Cmat))
+        df.loc[i, 'Cavi'] = np.mean(diags)
+        np.fill_diagonal(Cmat, 1)
+        df.loc[i, 'Cnd'] = np.mean(Cmat)
+        #Compute facilitation flux before assembly
+        df.loc[i, 'J0_av'] = np.mean(facilitation_flux(df['l'][i], 
+                                    np.ones(len(ind_extant)), c_assembly, 
+                                    D, r))
+        #Compute facilitation flux after assembly
+        df.loc[i, 'J_av'] = np.mean(facilitation_flux(df['l'][i], 
+                                    stable_abundance[ind_extant], c_assembly, 
+                                    D, r))
+        #df.loc[i, 'Fav'] = F_cy[1]
+        #df.loc[i, 'Cav'] = C_cy[1]
+        #df.loc[i, 'Cbav'] = C_cy[2]
+        #df.loc[i, 'FPasc'] = F_cy[2]
+        #df.loc[i, 'CPasc'] = C_cy[3]
 
     #Save results
     if len(sys.argv) > 1:

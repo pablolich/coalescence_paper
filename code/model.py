@@ -18,7 +18,7 @@ import matplotlib.pylab as plt
 global seed; seed = 69
 
 ## FUNCTIONS ##
-def maintenance(c, cost = 0.1):
+def maintenance(c, l, seed = 0, cost = 0.1):
     '''
     Calculates maintenance cost based on number of metabolic pathways
     '''
@@ -27,11 +27,18 @@ def maintenance(c, cost = 0.1):
     s = np.shape(c)[0]
     #Get number of pathways of each species
     n_path = c.sum(axis = 1)
-    fluc = np.random.normal(0, 0.1, size = s)
-    for i in range(len(fluc)):
-        while abs(fluc[i]) > 0.1:
-            fluc[i] = np.random.normal(0, 0.1)
-    m = cost*n_path + fluc
+    if seed:
+        np.random.seed(seed)
+        fluc = np.random.normal(0, 0.1, size = s)
+        for i in range(len(fluc)):
+            while abs(fluc[i]) > 0.1:
+                fluc[i] = np.random.normal(0, 0.1)
+    else:
+        fluc = np.random.normal(0, 0.1, size = s)
+        for i in range(len(fluc)):
+            while abs(fluc[i]) > 0.1:
+                fluc[i] = np.random.normal(0, 0.1)
+    m = (cost*n_path + fluc)*(1-l)
     return(m)
 
 def rescaling(v):
@@ -109,7 +116,7 @@ def preference_matrix(m, s, kc, beta, n_r):
         elif beta:
             #Make sure that it is greater than 1, but smaller than the total number
             #of resources
-            while n < 1 or n > m/3:
+            while n < 1 or n > m:
                 n = round(np.random.exponential(beta))
         #Compute the cumulative demand
         cum = np.sum(c[0:i,:], axis = 0)
@@ -132,7 +139,7 @@ def equations(t, z, params):
                 g (sx1): proportionality constant harvested energy --> abundance
                 N (sx1): abundance of each strain
                 c (sxm): preference matrix of the community
-                l (mx1): leakage factor of each resource
+                l (sx1): leakage of each species
                 x (sx1): maintenance cost of each species
                 D (mxm): metabolic matrix of community
                 coal (bool): is the assembly a coalescence event, or not?
@@ -151,21 +158,20 @@ def equations(t, z, params):
     R = np.array(z[s:m+s]).reshape(m,1)
     if not coal :
         #Compute one iteration step
-        dNdt = g * N * (c @ ((1 - l) * R) - x)
+        dNdt = g * N * (np.diag((1-l).T[0]) @ c @  R - x)
         #Normal equation for resources
-        dRdt = K - 1 / t * R - (c.transpose() @ N) * R + \
-               D.transpose() @ ((l * R) * c.transpose()) @ N
+        dRdt = K - 1 / t * R - (c.T @ N) * R + \
+               D.T @ np.diag(R.T[0]) @ c.T @ np.diag(l.T[0]) @ N
     if coal:
         #Extend the vector of resources
         Re = np.vstack( [R]*(int(np.shape(D)[0]/m)) )
         #Compute one iteration step
-        dNdt = g * N * (c @ ((1 - l) * Re) - x)
+        dNdt = g * N * (np.diag((1 - l).T[0]) @ c @ Re - x)
         #Construct matrix to sum the effects on resource due to each community
         sum_mat = np.concatenate([np.identity(m)]*(int(np.shape(D)[0]/m)), 
                                  axis = 1)
         #Sum the effect of the two communities in the last term
-        #1 / t * R
-        dRdt = K - sum_mat @ ((c.transpose() @ N) * Re + \
-               D.transpose() @ ((l * Re) * c.transpose()) @ N)
+        dRdt = K - 1/t * R - sum_mat @ ((c.T @ N) * Re + \
+               D.T @ np.diag(Re.T[0]) @ c.T @ np.diag(l.T[0]) @ N)
     return(list(dNdt.reshape(s))+list(dRdt.reshape(m)))
     

@@ -25,7 +25,8 @@ my_dat = sim_l %>% select(4, 9, 10, 11)
 
 simulations_pref = simulations_pref[(simulations_pref$ER<1000),]
 simulations_pref_01 = simulations_pref[(simulations_pref$l == 0.1),] 
-depletion_01_st = ggplot(data = simulations_pref_01,
+#depletion_01_st = 
+  ggplot(data = simulations_pref_01,
                       aes(x = (Fav/l - (Cav/(1-l) + Cbav/l))))+
   geom_point(aes(shape = as.factor(kc),
                  y = ER/r,
